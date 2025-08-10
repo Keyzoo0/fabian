@@ -31,6 +31,14 @@ def save_config():
             'calib_distance_cm': cv2.getTrackbarPos('Calib Distance (cm)', 'Trackbar'),
             'calib_pixel_area': cv2.getTrackbarPos('Calib Pixel Area', 'Trackbar'),
             'min_area_threshold': cv2.getTrackbarPos('Min Area Threshold', 'Trackbar')
+        },
+        'camera_controls': {
+            'auto_exposure': cv2.getTrackbarPos('Auto Exposure', 'Trackbar'),
+            'exposure': cv2.getTrackbarPos('Exposure', 'Trackbar'),
+            'auto_wb': cv2.getTrackbarPos('Auto White Balance', 'Trackbar'),
+            'wb_temperature': cv2.getTrackbarPos('WB Temperature', 'Trackbar'),
+            'brightness': cv2.getTrackbarPos('Brightness', 'Trackbar'),
+            'contrast': cv2.getTrackbarPos('Contrast', 'Trackbar')
         }
     }
     
@@ -74,6 +82,14 @@ def set_trackbars_from_config(config):
         cv2.setTrackbarPos('Calib Distance (cm)', 'Trackbar', config.get('calibration', {}).get('calib_distance_cm', 50))
         cv2.setTrackbarPos('Calib Pixel Area', 'Trackbar', config.get('calibration', {}).get('calib_pixel_area', 5000))
         cv2.setTrackbarPos('Min Area Threshold', 'Trackbar', config.get('calibration', {}).get('min_area_threshold', 500))
+        
+        # Set camera control trackbars dengan default values
+        cv2.setTrackbarPos('Auto Exposure', 'Trackbar', config.get('camera_controls', {}).get('auto_exposure', 0))
+        cv2.setTrackbarPos('Exposure', 'Trackbar', config.get('camera_controls', {}).get('exposure', 50))
+        cv2.setTrackbarPos('Auto White Balance', 'Trackbar', config.get('camera_controls', {}).get('auto_wb', 0))
+        cv2.setTrackbarPos('WB Temperature', 'Trackbar', config.get('camera_controls', {}).get('wb_temperature', 40))
+        cv2.setTrackbarPos('Brightness', 'Trackbar', config.get('camera_controls', {}).get('brightness', 50))
+        cv2.setTrackbarPos('Contrast', 'Trackbar', config.get('camera_controls', {}).get('contrast', 50))
 
 # Inisialisasi kamera
 cap = cv2.VideoCapture(2)
@@ -92,7 +108,7 @@ else:
 
 # Buat window untuk trackbar
 cv2.namedWindow('Trackbar')
-cv2.resizeWindow('Trackbar', 400, 400)
+cv2.resizeWindow('Trackbar', 400, 600)  # Lebih tinggi untuk camera controls
 
 # Buat trackbar untuk HSV
 cv2.createTrackbar('H Min', 'Trackbar', 0, 179, nothing)
@@ -112,6 +128,14 @@ cv2.createTrackbar('Closing', 'Trackbar', 0, 10, nothing)
 cv2.createTrackbar('Calib Distance (cm)', 'Trackbar', 50, 200, nothing)  # Default: 50 cm
 cv2.createTrackbar('Calib Pixel Area', 'Trackbar', 5000, max_pixel_area, nothing)  # Max: setengah area frame
 cv2.createTrackbar('Min Area Threshold', 'Trackbar', 500, max_pixel_area, nothing)  # Default: 500 pixels
+
+# Buat trackbar untuk camera controls
+cv2.createTrackbar('Auto Exposure', 'Trackbar', 0, 1, nothing)        # 0=Manual, 1=Auto
+cv2.createTrackbar('Exposure', 'Trackbar', 50, 100, nothing)           # 0-100 (mapped to actual range)
+cv2.createTrackbar('Auto White Balance', 'Trackbar', 0, 1, nothing)    # 0=Manual, 1=Auto
+cv2.createTrackbar('WB Temperature', 'Trackbar', 40, 80, nothing)      # 2000-8000K (mapped)
+cv2.createTrackbar('Brightness', 'Trackbar', 50, 100, nothing)         # 0-100
+cv2.createTrackbar('Contrast', 'Trackbar', 50, 100, nothing)           # 0-100
 
 # Load konfigurasi yang tersimpan
 config = load_config()
@@ -143,6 +167,39 @@ while True:
     calib_distance_cm = cv2.getTrackbarPos('Calib Distance (cm)', 'Trackbar')
     calib_pixel_area = cv2.getTrackbarPos('Calib Pixel Area', 'Trackbar')
     min_area_threshold = cv2.getTrackbarPos('Min Area Threshold', 'Trackbar')
+    
+    # Ambil nilai camera controls
+    auto_exposure = cv2.getTrackbarPos('Auto Exposure', 'Trackbar')
+    exposure_val = cv2.getTrackbarPos('Exposure', 'Trackbar')
+    auto_wb = cv2.getTrackbarPos('Auto White Balance', 'Trackbar')
+    wb_temp = cv2.getTrackbarPos('WB Temperature', 'Trackbar')
+    brightness = cv2.getTrackbarPos('Brightness', 'Trackbar')
+    contrast = cv2.getTrackbarPos('Contrast', 'Trackbar')
+    
+    # Apply camera settings
+    try:
+        # Auto Exposure (0=Manual, 1=Auto)
+        if auto_exposure == 0:
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # Manual mode
+            # Map 0-100 to exposure range (biasanya -13 to -1)
+            exposure_mapped = -13 + (exposure_val / 100.0) * 12
+            cap.set(cv2.CAP_PROP_EXPOSURE, exposure_mapped)
+        else:
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)  # Auto mode
+        
+        # White Balance
+        cap.set(cv2.CAP_PROP_AUTO_WB, auto_wb)
+        if auto_wb == 0:  # Manual WB
+            # Map 0-80 to 2000K-8000K
+            wb_temp_mapped = 2000 + (wb_temp / 80.0) * 6000
+            cap.set(cv2.CAP_PROP_WB_TEMPERATURE, wb_temp_mapped)
+        
+        # Brightness and Contrast (0-100 range)
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, brightness)
+        cap.set(cv2.CAP_PROP_CONTRAST, contrast)
+        
+    except Exception as e:
+        pass  # Some cameras might not support all controls
     
     # Buat range HSV
     lower = np.array([h_min, s_min, v_min])

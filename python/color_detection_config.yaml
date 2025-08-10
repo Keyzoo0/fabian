@@ -2,6 +2,13 @@ calibration:
   calib_distance_cm: 50
   calib_pixel_area: 22800
   min_area_threshold: 500
+camera_controls:
+  auto_exposure: 0
+  auto_wb: 0
+  brightness: 25
+  contrast: 25
+  exposure: 0
+  wb_temperature: 0
 hsv:
   h_max: 83
   h_min: 33
