@@ -74,7 +74,7 @@ def set_trackbars_from_config(config):
         cv2.setTrackbarPos('Calib Pixel Area', 'Trackbar', config.get('calibration', {}).get('calib_pixel_area', 5000))
 
 # Inisialisasi kamera
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 
 # Dapatkan resolusi kamera
 ret, test_frame = cap.read()
@@ -172,6 +172,17 @@ while True:
     
     # Buat copy frame untuk bounding box
     frame_with_box = frame.copy()
+    
+    # Tambahkan garis tengah X dan Y (crosshair di center frame)
+    frame_center_x, frame_center_y = frame.shape[1] // 2, frame.shape[0] // 2
+    
+    # Garis horizontal (kiri ke kanan)
+    cv2.line(frame_with_box, (0, frame_center_y), (frame.shape[1], frame_center_y), (255, 255, 0), 1)
+    # Garis vertikal (atas ke bawah)  
+    cv2.line(frame_with_box, (frame_center_x, 0), (frame_center_x, frame.shape[0]), (255, 255, 0), 1)
+    
+    # Tambahkan titik center
+    cv2.circle(frame_with_box, (frame_center_x, frame_center_y), 3, (255, 255, 0), -1)
     
     if contours:
         # Cari kontur dengan area terbesar
