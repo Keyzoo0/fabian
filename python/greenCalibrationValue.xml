@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<green_calibration version="1.0" timestamp="1703845200.0">
+  <hsv_range>
+    <hue_min>35</hue_min>
+    <hue_max>85</hue_max>
+    <sat_min>40</sat_min>
+    <sat_max>255</sat_max>
+    <val_min>30</val_min>
+    <val_max>255</val_max>
+  </hsv_range>
+  <hsv_range_2>
+    <enabled>true</enabled>
+    <hue_min>25</hue_min>
+    <hue_max>45</hue_max>
+    <sat_min>30</sat_min>
+    <sat_max>255</sat_max>
+    <val_min>20</val_min>
+    <val_max>200</val_max>
+  </hsv_range_2>
+  <visual_servoing>
+    <kp_gain>0.4</kp_gain>
+    <target_size>80</target_size>
+    <focal_length>600</focal_length>
+    <real_size>12.0</real_size>
+  </visual_servoing>
+  <morphology>
+    <erosion_iterations>0</erosion_iterations>
+    <dilation_iterations>2</dilation_iterations>
+    <kernel_size>3</kernel_size>
+    <min_area>150</min_area>
+  </morphology>
+  <detection_params>
+    <min_aspect_ratio>0.3</min_aspect_ratio>
+    <max_aspect_ratio>3.0</max_aspect_ratio>
+    <min_contour_area>150</min_contour_area>
+    <max_contour_area>50000</max_contour_area>
+    <contour_approximation>0.02</contour_approximation>
+  </detection_params>
+</green_calibration>

@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenCV Green Square Detection & Control</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f4c3a, #1e6b52);
+        color: white;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 2fr 350px;
+        gap: 20px;
+        height: calc(100vh - 40px);
+      }
+
+      .main-panel {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .control-panel {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        overflow-y: auto;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .video-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 15px;
+        min-height: 400px;
+      }
+
+      .video-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid rgba(34, 197, 94, 0.3);
+      }
+
+      .video-container img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .frame-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(34, 197, 94, 0.9);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: white;
+      }
+
+      .crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        pointer-events: none;
+      }
+
+      .crosshair::before,
+      .crosshair::after {
+        content: "";
+        position: absolute;
+        background: #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+      }
+
+      .crosshair::before {
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        transform: translateY(-50%);
+      }
+
+      .crosshair::after {
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        transform: translateX(-50%);
+      }
+
+      .mode-switch {
+        display: flex;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 25px;
+        padding: 5px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .mode-switch input {
+        display: none;
+      }
+
+      .mode-switch label {
+        flex: 1;
+        text-align: center;
+        padding: 12px 20px;
+        cursor: pointer;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        z-index: 2;
+        position: relative;
+      }
+
+      .mode-switch input:checked + label {
+        color: #0f4c3a;
+        text-shadow: none;
+      }
+
+      .mode-switch .slider {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        width: calc(50% - 5px);
+        height: calc(100% - 10px);
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+        border-radius: 20px;
+        transition: transform 0.3s ease;
+        z-index: 1;
+      }
+
+      .mode-switch input:nth-child(3):checked ~ .slider {
+        transform: translateX(100%);
+      }
+
+      .section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+
+      .section h3 {
+        color: #22c55e;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+      }
+
+      .calibration-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .calibration-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .calibration-item label {
+        font-size: 0.9rem;
+        color: #ccc;
+      }
+
+      .calibration-item input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 8px;
+        color: white;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+      }
+
+      .calibration-item input:focus {
+        outline: none;
+        border-color: #22c55e;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+      }
+
+      .preset-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 8px;
+        color: white;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .preset-btn:hover {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: #22c55e;
+        transform: translateY(-1px);
+      }
+
+      .preset-btn:active {
+        transform: translateY(0);
+      }
+
+      .save-button {
+        width: 100%;
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        padding: 12px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 15px;
+      }
+
+      .save-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4);
+      }
+
+      .save-button:active {
+        transform: translateY(0);
+      }
+
+      .dual-range-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(34, 197, 94, 0.1);
+        border-radius: 8px;
+      }
+
+      .dual-range-toggle input[type="checkbox"] {
+        transform: scale(1.2);
+      }
+
+      .joystick-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+      }
+
+      .joystick {
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(
+          circle,
+          rgba(34, 197, 94, 0.2),
+          rgba(34, 197, 94, 0.05)
+        );
+        border: 3px solid rgba(34, 197, 94, 0.5);
+        border-radius: 50%;
+        position: relative;
+        cursor: pointer;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .joystick-knob {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.1s ease;
+      }
+
+      .wasd-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        max-width: 200px;
+        margin: 0 auto;
+      }
+
+      .wasd-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(34, 197, 94, 0.3);
+        border-radius: 10px;
+        color: white;
+        padding: 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+
+      .wasd-btn:hover {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: #22c55e;
+        transform: translateY(-2px);
+      }
+
+      .wasd-btn.active {
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+        color: #0f4c3a;
+        transform: translateY(1px);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .wasd-btn:nth-child(1) {
+        grid-column: 2;
+      }
+      .wasd-btn:nth-child(2) {
+        grid-column: 1;
+      }
+      .wasd-btn:nth-child(3) {
+        grid-column: 3;
+      }
+      .wasd-btn:nth-child(4) {
+        grid-column: 2;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .status-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .status-label {
+        font-size: 0.8rem;
+        color: #ccc;
+        margin-bottom: 5px;
+      }
+
+      .status-value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #22c55e;
+      }
+
+      .detection-info {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+      }
+
+      .success-display {
+        background: rgba(34, 197, 94, 0.2);
+        border: 1px solid rgba(34, 197, 94, 0.5);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+
+      .error-display {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+      }
+
+      .notification.show {
+        transform: translateX(0);
+      }
+
+      .notification.success {
+        background: linear-gradient(45deg, #22c55e, #16a34a);
+      }
+
+      .notification.error {
+        background: linear-gradient(45deg, #ef4444, #dc2626);
+      }
+
+      @keyframes pulse-green {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .recording {
+        animation: pulse-green 2s infinite;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 1400px) {
+        .container {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr auto;
+        }
+
+        .control-panel {
+          max-height: 400px;
+        }
+
+        .video-grid {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          min-height: 300px;
+        }
+      }
+
+      @media (max-width: 800px) {
+        .video-grid {
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(4, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="main-panel">
+        <h1>🟢 OpenCV Green Square Detection</h1>
+
+        <div class="video-grid">
+          <div class="video-container">
+            <div class="frame-label">RGB Original</div>
+            <img
+              id="videoStreamOriginal"
+              src="/video_feed/original"
+              alt="Original Stream"
+            />
+            <div class="crosshair"></div>
+          </div>
+
+          <div class="video-container">
+            <div class="frame-label">HSV Color Space</div>
+            <img id="videoStreamHSV" src="/video_feed/hsv" alt="HSV Stream" />
+            <div class="crosshair"></div>
+          </div>
+
+          <div class="video-container">
+            <div class="frame-label">Green Binary Mask</div>
+            <img
+              id="videoStreamBinary"
+              src="/video_feed/binary"
+              alt="Binary Stream"
+            />
+            <div class="crosshair"></div>
+          </div>
+
+          <div class="video-container">
+            <div class="frame-label">Morphology Result</div>
+            <img
+              id="videoStreamProcessed"
+              src="/video_feed/processed"
+              alt="Processed Stream"
+            />
+            <div class="crosshair"></div>
+          </div>
+        </div>
+
+        <div class="detection-info">
+          <div class="status-grid">
+            <div class="status-item">
+              <div class="status-label">Detection Status</div>
+              <div class="status-value" id="detectionStatus">Searching...</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Object Position</div>
+              <div class="status-value" id="objectPosition">N/A</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Distance (cm)</div>
+              <div class="status-value" id="objectDistance">N/A</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Confidence</div>
+              <div class="status-value" id="confidence">0%</div>
+            </div>
+          </div>
+
+          <h3 style="margin-top: 20px">⌨️ WASD Controls</h3>
+          <div class="wasd-controls">
+            <div class="wasd-btn" data-key="w">W</div>
+            <div class="wasd-btn" data-key="a">A</div>
+            <div class="wasd-btn" data-key="d">D</div>
+            <div class="wasd-btn" data-key="s">S</div>
+          </div>
+
+          <div class="status-grid" style="margin-top: 15px">
+            <div class="status-item">
+              <div class="status-label">Active Keys</div>
+              <div class="status-value" id="activeKeys">None</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Command</div>
+              <div class="status-value" id="currentCommand">STOP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="section">
+          <div class="mode-switch">
+            <input
+              type="radio"
+              id="autoMode"
+              name="mode"
+              value="auto"
+              checked
+            />
+            <label for="autoMode">🤖 AUTO</label>
+            <input type="radio" id="manualMode" name="mode" value="manual" />
+            <label for="manualMode">🎮 MANUAL</label>
+            <div class="slider"></div>
+          </div>
+        </div>
+
+        <!-- Auto Mode Controls -->
+        <div id="autoControls" class="section">
+          <h3>🌿 Green Color Calibration</h3>
+
+          <!-- Dual Range Toggle -->
+          <div class="dual-range-toggle">
+            <input type="checkbox" id="dualRangeEnabled" checked />
+            <label for="dualRangeEnabled">Enable Dual Range Detection</label>
+          </div>
+
+          <div class="calibration-grid">
+            <div class="calibration-item">
+              <label>Hue Min</label>
+              <input type="range" id="hueMin" min="0" max="179" value="35" />
+              <span id="hueMinValue">35</span>
+            </div>
+            <div class="calibration-item">
+              <label>Hue Max</label>
+              <input type="range" id="hueMax" min="0" max="179" value="85" />
+              <span id="hueMaxValue">85</span>
+            </div>
+            <div class="calibration-item">
+              <label>Sat Min</label>
+              <input type="range" id="satMin" min="0" max="255" value="40" />
+              <span id="satMinValue">40</span>
+            </div>
+            <div class="calibration-item">
+              <label>Sat Max</label>
+              <input type="range" id="satMax" min="0" max="255" value="255" />
+              <span id="satMaxValue">255</span>
+            </div>
+            <div class="calibration-item">
+              <label>Val Min</label>
+              <input type="range" id="valMin" min="0" max="255" value="30" />
+              <span id="valMinValue">30</span>
+            </div>
+            <div class="calibration-item">
+              <label>Val Max</label>
+              <input type="range" id="valMax" min="0" max="255" value="255" />
+              <span id="valMaxValue">255</span>
+            </div>
+          </div>
+
+          <!-- Green preset buttons -->
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 8px;
+              margin: 15px 0;
+            "
+          >
+            <button class="preset-btn" onclick="setColorPreset('bright_green')">
+              🟢 Bright Green
+            </button>
+            <button class="preset-btn" onclick="setColorPreset('dark_green')">
+              🌲 Dark Green
+            </button>
+            <button class="preset-btn" onclick="setColorPreset('forest_green')">
+              🌿 Forest Green
+            </button>
+            <button class="preset-btn" onclick="setColorPreset('lime_green')">
+              🍃 Lime Green
+            </button>
+          </div>
+
+          <h3 style="margin-top: 20px">⚙️ Visual Servoing</h3>
+          <div class="calibration-grid">
+            <div class="calibration-item">
+              <label>Kp Gain</label>
+              <input
+                type="number"
+                id="kpGain"
+                value="0.4"
+                step="0.1"
+                min="0"
+                max="2"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Target Size (px)</label>
+              <input
+                type="number"
+                id="targetSize"
+                value="80"
+                step="10"
+                min="50"
+                max="300"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Focal Length</label>
+              <input
+                type="number"
+                id="focalLength"
+                value="600"
+                step="10"
+                min="100"
+                max="1500"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Real Size (cm)</label>
+              <input
+                type="number"
+                id="realSize"
+                value="12"
+                step="0.5"
+                min="1"
+                max="50"
+              />
+            </div>
+          </div>
+
+          <h3 style="margin-top: 20px">🔧 Morphology & Detection</h3>
+
+          <!-- Morphology Presets -->
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 6px;
+              margin-bottom: 15px;
+            "
+          >
+            <button
+              class="preset-btn"
+              onclick="setMorphologyPreset('off')"
+              style="font-size: 0.7rem"
+            >
+              ⭕ OFF
+            </button>
+            <button
+              class="preset-btn"
+              onclick="setMorphologyPreset('light')"
+              style="font-size: 0.7rem"
+            >
+              🟡 Light
+            </button>
+            <button
+              class="preset-btn"
+              onclick="setMorphologyPreset('heavy')"
+              style="font-size: 0.7rem"
+            >
+              🔴 Heavy
+            </button>
+          </div>
+
+          <div class="calibration-grid">
+            <div class="calibration-item">
+              <label>Erosion Iterations</label>
+              <input
+                type="number"
+                id="erosionIterations"
+                value="0"
+                step="1"
+                min="0"
+                max="5"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Dilation Iterations</label>
+              <input
+                type="number"
+                id="dilationIterations"
+                value="2"
+                step="1"
+                min="0"
+                max="5"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Kernel Size</label>
+              <input
+                type="number"
+                id="kernelSize"
+                value="3"
+                step="2"
+                min="3"
+                max="9"
+              />
+            </div>
+            <div class="calibration-item">
+              <label>Min Area (px²)</label>
+              <input
+                type="number"
+                id="minArea"
+                value="150"
+                step="25"
+                min="50"
+                max="2000"
+              />
+            </div>
+          </div>
+
+          <h3 style="margin-top: 20px">🔍 Debug Tools</h3>
+          <div
+            class="section"
+            style="
+              background: rgba(34, 197, 94, 0.1);
+              border-color: rgba(34, 197, 94, 0.3);
+            "
+          >
+            <div class="calibration-grid">
+              <div class="calibration-item">
+                <label>HSV at Cursor</label>
+                <div
+                  id="hsvDebug"
+                  style="font-family: monospace; font-size: 0.8rem"
+                >
+                  Click on image
+                </div>
+              </div>
+              <div class="calibration-item">
+                <label>Green Coverage</label>
+                <div
+                  id="maskStats"
+                  style="font-family: monospace; font-size: 0.8rem"
+                >
+                  0.0%
+                </div>
+              </div>
+            </div>
+            <button
+              class="save-button"
+              id="quickCalibrate"
+              style="
+                background: linear-gradient(45deg, #22c55e, #16a34a);
+                margin-top: 10px;
+              "
+            >
+              🌿 Quick Green Calibrate
+            </button>
+          </div>
+
+          <button class="save-button" id="saveCalibration">
+            💾 Save Green Calibration to XML
+          </button>
+        </div>
+
+        <!-- Manual Mode Controls -->
+        <div id="manualControls" class="section hidden">
+          <h3>🎮 Analog Joystick</h3>
+          <div class="joystick-container">
+            <div class="joystick" id="joystick">
+              <div class="joystick-knob" id="joystickKnob"></div>
+            </div>
+          </div>
+
+          <div class="status-grid">
+            <div class="status-item">
+              <div class="status-label">X Position</div>
+              <div class="status-value" id="joystickX">0</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Y Position</div>
+              <div class="status-value" id="joystickY">0</div>
+            </div>
+          </div>
+
+          <h3 style="margin-top: 20px">⌨️ WASD Controls</h3>
+          <div class="wasd-controls">
+            <div class="wasd-btn" data-key="w">W</div>
+            <div class="wasd-btn" data-key="a">A</div>
+            <div class="wasd-btn" data-key="d">D</div>
+            <div class="wasd-btn" data-key="s">S</div>
+          </div>
+
+          <div class="status-grid" style="margin-top: 15px">
+            <div class="status-item">
+              <div class="status-label">Active Keys</div>
+              <div class="status-value" id="activeKeys">None</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Command</div>
+              <div class="status-value" id="currentCommand">STOP</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>📡 ROS Status</h3>
+          <div id="rosStatus" class="success-display">
+            ✅ Green Detection Node Active
+          </div>
+          <div class="status-grid">
+            <div class="status-item">
+              <div class="status-label">Published Topics</div>
+              <div class="status-value" id="publishCount">0</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Frequency (Hz)</div>
+              <div class="status-value" id="publishFreq">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification container -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+      // Global variables
+      let currentMode = "auto";
+      let joystickData = { x: 0, y: 0 };
+      let activeKeys = new Set();
+      let publishCount = 0;
+      let lastPublishTime = Date.now();
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeModeSwitch();
+        initializeCalibration();
+        initializeJoystick();
+        initializeKeyboard();
+        initializeSaveButton();
+        initializeDebugTools();
+        initializeDualRange();
+        loadCalibrationFromServer();
+        startStatusUpdates();
+        startDebugUpdates();
+      });
+
+      // Initialize dual range toggle
+      function initializeDualRange() {
+        const dualRangeToggle = document.getElementById("dualRangeEnabled");
+        if (dualRangeToggle) {
+          dualRangeToggle.addEventListener("change", function () {
+            publishCalibrationData();
+            showNotification(
+              `Dual range detection ${this.checked ? "enabled" : "disabled"}`,
+              "success"
+            );
+          });
+        }
+      }
+
+      // Load calibration from server
+      function loadCalibrationFromServer() {
+        fetch("/get_calibration")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Loaded calibration:", data);
+
+            // Load HSV range values
+            if (data.hsv_range) {
+              Object.keys(data.hsv_range).forEach((key) => {
+                const element = document.getElementById(
+                  key.charAt(0).toLowerCase() + key.slice(1).replace("_", "")
+                );
+                if (element) {
+                  element.value = data.hsv_range[key];
+                  const display = document.getElementById(element.id + "Value");
+                  if (display) display.textContent = data.hsv_range[key];
+                }
+              });
+            }
+
+            // Load dual range settings
+            if (data.hsv_range_2) {
+              const dualRangeToggle =
+                document.getElementById("dualRangeEnabled");
+              if (dualRangeToggle) {
+                dualRangeToggle.checked = data.hsv_range_2.enabled || false;
+              }
+            }
+
+            // Load visual servoing values
+            if (data.visual_servoing) {
+              Object.keys(data.visual_servoing).forEach((key) => {
+                const element = document.getElementById(
+                  key.charAt(0).toLowerCase() + key.slice(1).replace("_", "")
+                );
+                if (element) {
+                  element.value = data.visual_servoing[key];
+                }
+              });
+            }
+
+            // Load morphology values
+            if (data.morphology) {
+              Object.keys(data.morphology).forEach((key) => {
+                const element = document.getElementById(
+                  key.charAt(0).toLowerCase() + key.slice(1).replace("_", "")
+                );
+                if (element) {
+                  element.value = data.morphology[key];
+                }
+              });
+            }
+
+            showNotification("Green calibration loaded from XML", "success");
+          })
+          .catch((error) => {
+            console.error("Error loading green calibration:", error);
+            showNotification("Error loading green calibration", "error");
+          });
+      }
+
+      // Show notification
+      function showNotification(message, type = "success") {
+        const notification = document.getElementById("notification");
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.classList.add("show");
+
+        setTimeout(() => {
+          notification.classList.remove("show");
+        }, 3000);
+      }
+
+      // Initialize save button
+      function initializeSaveButton() {
+        const saveButton = document.getElementById("saveCalibration");
+        if (saveButton) {
+          saveButton.addEventListener("click", function () {
+            fetch("/save_calibration", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                timestamp: Date.now(),
+              }),
+            })
+              .then((response) => response.json())
+              .then((result) => {
+                if (result.status === "success") {
+                  showNotification(
+                    "Green calibration saved to XML successfully!",
+                    "success"
+                  );
+                } else {
+                  showNotification(
+                    "Error saving calibration: " + result.message,
+                    "error"
+                  );
+                }
+              })
+              .catch((error) => {
+                console.error("Save calibration error:", error);
+                showNotification(
+                  "Network error while saving calibration",
+                  "error"
+                );
+              });
+          });
+        }
+      }
+
+      // Initialize debug tools
+      function initializeDebugTools() {
+        // Add click handlers to video streams for HSV debugging
+        const videoStreams = document.querySelectorAll(
+          'img[id^="videoStream"]'
+        );
+        videoStreams.forEach((stream) => {
+          stream.addEventListener("click", function (event) {
+            const rect = this.getBoundingClientRect();
+            const x = Math.floor(
+              (event.clientX - rect.left) * (this.naturalWidth / rect.width)
+            );
+            const y = Math.floor(
+              (event.clientY - rect.top) * (this.naturalHeight / rect.height)
+            );
+
+            fetch(`/debug_hsv/${x}/${y}`)
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.error) {
+                  const hsvDebug = document.getElementById("hsvDebug");
+                  if (hsvDebug) hsvDebug.innerHTML = "Error: " + data.error;
+                } else {
+                  const hsvDebug = document.getElementById("hsvDebug");
+                  if (hsvDebug) {
+                    hsvDebug.innerHTML = `H:${data.hue} S:${data.sat} V:${
+                      data.val
+                    }<br>RGB:(${data.bgr.join(",")})`;
+                  }
+                }
+              })
+              .catch((error) => {
+                const hsvDebug = document.getElementById("hsvDebug");
+                if (hsvDebug) hsvDebug.innerHTML = "Network error";
+              });
+          });
+        });
+
+        // Quick calibrate button
+        const quickCalibrate = document.getElementById("quickCalibrate");
+        if (quickCalibrate) {
+          quickCalibrate.addEventListener("click", function () {
+            setColorPreset("bright_green");
+          });
+        }
+      }
+
+      // Start debug updates
+      function startDebugUpdates() {
+        setInterval(() => {
+          if (currentMode === "auto") {
+            fetch("/mask_debug")
+              .then((response) => response.json())
+              .then((data) => {
+                if (!data.error) {
+                  let statsText = `${data.percentage.toFixed(2)}%<br>${
+                    data.white_pixels
+                  } pixels`;
+                  if (data.secondary_enabled) {
+                    statsText += `<br>Dual: ${data.primary_pixels}+`;
+                  }
+                  const maskStats = document.getElementById("maskStats");
+                  if (maskStats) maskStats.innerHTML = statsText;
+                }
+              })
+              .catch((error) => {
+                const maskStats = document.getElementById("maskStats");
+                if (maskStats) maskStats.innerHTML = "Error";
+              });
+          }
+        }, 500);
+      }
+
+      // Mode switching
+      function initializeModeSwitch() {
+        const modeInputs = document.querySelectorAll('input[name="mode"]');
+        modeInputs.forEach((input) => {
+          input.addEventListener("change", function () {
+            currentMode = this.value;
+            toggleControlPanels();
+            publishModeChange();
+          });
+        });
+      }
+
+      function toggleControlPanels() {
+        const autoControls = document.getElementById("autoControls");
+        const manualControls = document.getElementById("manualControls");
+
+        if (currentMode === "auto") {
+          if (autoControls) autoControls.classList.remove("hidden");
+          if (manualControls) manualControls.classList.add("hidden");
+        } else {
+          if (autoControls) autoControls.classList.add("hidden");
+          if (manualControls) manualControls.classList.remove("hidden");
+        }
+      }
+
+      // Calibration controls
+      function initializeCalibration() {
+        const sliders = [
+          "hueMin",
+          "hueMax",
+          "satMin",
+          "satMax",
+          "valMin",
+          "valMax",
+        ];
+        sliders.forEach((id) => {
+          const slider = document.getElementById(id);
+          const display = document.getElementById(id + "Value");
+
+          if (slider && display) {
+            slider.addEventListener("input", function () {
+              display.textContent = this.value;
+              publishCalibrationData();
+            });
+          }
+        });
+
+        const inputs = [
+          "kpGain",
+          "targetSize",
+          "focalLength",
+          "realSize",
+          "erosionIterations",
+          "dilationIterations",
+          "kernelSize",
+          "minArea",
+        ];
+        inputs.forEach((id) => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.addEventListener("input", publishCalibrationData);
+          }
+        });
+      }
+
+      // Color preset functions
+      function setColorPreset(presetType) {
+        let hueMin, hueMax, satMin, satMax, valMin, valMax;
+
+        switch (presetType) {
+          case "bright_green":
+            hueMin = 40;
+            hueMax = 80;
+            satMin = 60;
+            satMax = 255;
+            valMin = 60;
+            valMax = 255;
+            showNotification("Applied Bright Green preset", "success");
+            break;
+
+          case "dark_green":
+            hueMin = 35;
+            hueMax = 75;
+            satMin = 40;
+            satMax = 255;
+            valMin = 20;
+            valMax = 180;
+            showNotification("Applied Dark Green preset", "success");
+            break;
+
+          case "forest_green":
+            hueMin = 30;
+            hueMax = 70;
+            satMin = 30;
+            satMax = 255;
+            valMin = 15;
+            valMax = 150;
+            showNotification("Applied Forest Green preset", "success");
+            break;
+
+          case "lime_green":
+            hueMin = 25;
+            hueMax = 45;
+            satMin = 50;
+            satMax = 255;
+            valMin = 80;
+            valMax = 255;
+            showNotification("Applied Lime Green preset", "success");
+            break;
+        }
+
+        // Update sliders
+        const elements = {
+          hueMin: hueMin,
+          hueMax: hueMax,
+          satMin: satMin,
+          satMax: satMax,
+          valMin: valMin,
+          valMax: valMax,
+        };
+
+        Object.keys(elements).forEach((id) => {
+          const slider = document.getElementById(id);
+          const display = document.getElementById(id + "Value");
+          if (slider) slider.value = elements[id];
+          if (display) display.textContent = elements[id];
+        });
+
+        publishCalibrationData();
+      }
+
+      // Morphology preset functions
+      function setMorphologyPreset(presetType) {
+        let erosion, dilation, kernel;
+
+        switch (presetType) {
+          case "off":
+            erosion = 0;
+            dilation = 0;
+            kernel = 3;
+            showNotification("Morphology OFF - Pure binary mask", "success");
+            break;
+
+          case "light":
+            erosion = 0;
+            dilation = 1;
+            kernel = 3;
+            showNotification("Light morphology - Fill small gaps", "success");
+            break;
+
+          case "heavy":
+            erosion = 1;
+            dilation = 2;
+            kernel = 5;
+            showNotification("Heavy morphology - Clean + fill", "success");
+            break;
+        }
+
+        // Update morphology controls
+        const erosionEl = document.getElementById("erosionIterations");
+        const dilationEl = document.getElementById("dilationIterations");
+        const kernelEl = document.getElementById("kernelSize");
+
+        if (erosionEl) erosionEl.value = erosion;
+        if (dilationEl) dilationEl.value = dilation;
+        if (kernelEl) kernelEl.value = kernel;
+
+        publishCalibrationData();
+      }
+
+      // Joystick controls
+      function initializeJoystick() {
+        const joystick = document.getElementById("joystick");
+        const knob = document.getElementById("joystickKnob");
+        if (!joystick || !knob) return;
+
+        let isDragging = false;
+
+        function updateJoystick(event) {
+          const rect = joystick.getBoundingClientRect();
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const maxRadius = centerX - 20;
+
+          let x = event.clientX - rect.left - centerX;
+          let y = event.clientY - rect.top - centerY;
+
+          const distance = Math.sqrt(x * x + y * y);
+          if (distance > maxRadius) {
+            x = (x / distance) * maxRadius;
+            y = (y / distance) * maxRadius;
+          }
+
+          knob.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+
+          joystickData.x = Math.round((x / maxRadius) * 100);
+          joystickData.y = Math.round((-y / maxRadius) * 100);
+
+          const joystickX = document.getElementById("joystickX");
+          const joystickY = document.getElementById("joystickY");
+          if (joystickX) joystickX.textContent = joystickData.x;
+          if (joystickY) joystickY.textContent = joystickData.y;
+
+          if (currentMode === "manual") {
+            publishJoystickData();
+          }
+        }
+
+        joystick.addEventListener("mousedown", function (event) {
+          isDragging = true;
+          updateJoystick(event);
+        });
+
+        document.addEventListener("mousemove", function (event) {
+          if (isDragging) {
+            updateJoystick(event);
+          }
+        });
+
+        document.addEventListener("mouseup", function () {
+          if (isDragging) {
+            isDragging = false;
+            knob.style.transform = "translate(-50%, -50%)";
+            joystickData = { x: 0, y: 0 };
+
+            const joystickX = document.getElementById("joystickX");
+            const joystickY = document.getElementById("joystickY");
+            if (joystickX) joystickX.textContent = "0";
+            if (joystickY) joystickY.textContent = "0";
+
+            if (currentMode === "manual") {
+              publishJoystickData();
+            }
+          }
+        });
+      }
+
+      // Keyboard controls
+      function initializeKeyboard() {
+        const wasdButtons = document.querySelectorAll(".wasd-btn");
+
+        wasdButtons.forEach((btn) => {
+          btn.addEventListener("mousedown", function () {
+            const key = this.dataset.key;
+            activateKey(key);
+          });
+
+          btn.addEventListener("mouseup", function () {
+            const key = this.dataset.key;
+            deactivateKey(key);
+          });
+        });
+
+        document.addEventListener("keydown", function (event) {
+          const key = event.key.toLowerCase();
+          if (["w", "a", "s", "d"].includes(key)) {
+            event.preventDefault();
+            activateKey(key);
+          }
+        });
+
+        document.addEventListener("keyup", function (event) {
+          const key = event.key.toLowerCase();
+          if (["w", "a", "s", "d"].includes(key)) {
+            event.preventDefault();
+            deactivateKey(key);
+          }
+        });
+      }
+
+      function activateKey(key) {
+        if (!activeKeys.has(key)) {
+          activeKeys.add(key);
+          const btn = document.querySelector(`[data-key="${key}"]`);
+          if (btn) btn.classList.add("active");
+          updateKeyDisplay();
+
+          if (currentMode === "manual") {
+            publishKeyboardData();
+          }
+        }
+      }
+
+      function deactivateKey(key) {
+        if (activeKeys.has(key)) {
+          activeKeys.delete(key);
+          const btn = document.querySelector(`[data-key="${key}"]`);
+          if (btn) btn.classList.remove("active");
+          updateKeyDisplay();
+
+          if (currentMode === "manual") {
+            publishKeyboardData();
+          }
+        }
+      }
+
+      function updateKeyDisplay() {
+        const activeKeysArray = Array.from(activeKeys);
+        const activeKeysEl = document.getElementById("activeKeys");
+        if (activeKeysEl) {
+          activeKeysEl.textContent =
+            activeKeysArray.length > 0
+              ? activeKeysArray.join(", ").toUpperCase()
+              : "None";
+        }
+
+        let command = "STOP";
+        if (activeKeys.has("w")) command = "FORWARD";
+        else if (activeKeys.has("s")) command = "BACKWARD";
+        else if (activeKeys.has("a")) command = "LEFT";
+        else if (activeKeys.has("d")) command = "RIGHT";
+
+        if (activeKeys.has("w") && activeKeys.has("a"))
+          command = "FORWARD_LEFT";
+        else if (activeKeys.has("w") && activeKeys.has("d"))
+          command = "FORWARD_RIGHT";
+        else if (activeKeys.has("s") && activeKeys.has("a"))
+          command = "BACKWARD_LEFT";
+        else if (activeKeys.has("s") && activeKeys.has("d"))
+          command = "BACKWARD_RIGHT";
+
+        const currentCommandEl = document.getElementById("currentCommand");
+        if (currentCommandEl) currentCommandEl.textContent = command;
+      }
+
+      // Publishing functions
+      function publishModeChange() {
+        const data = {
+          mode: currentMode,
+          timestamp: Date.now(),
+        };
+        sendToROS("/mode_change", data);
+      }
+
+      function publishCalibrationData() {
+        if (currentMode !== "auto") return;
+
+        const getValue = (id, defaultVal = 0) => {
+          const el = document.getElementById(id);
+          return el
+            ? el.type === "checkbox"
+              ? el.checked
+              : parseFloat(el.value) || defaultVal
+            : defaultVal;
+        };
+
+        const data = {
+          hsv_range: {
+            hue_min: parseInt(getValue("hueMin")),
+            hue_max: parseInt(getValue("hueMax")),
+            sat_min: parseInt(getValue("satMin")),
+            sat_max: parseInt(getValue("satMax")),
+            val_min: parseInt(getValue("valMin")),
+            val_max: parseInt(getValue("valMax")),
+          },
+          hsv_range_2: {
+            enabled: getValue("dualRangeEnabled", false),
+            hue_min: 25,
+            hue_max: 45,
+            sat_min: 30,
+            sat_max: 255,
+            val_min: 20,
+            val_max: 200,
+          },
+          visual_servoing: {
+            kp_gain: getValue("kpGain", 0.4),
+            target_size: parseInt(getValue("targetSize", 80)),
+            focal_length: getValue("focalLength", 600),
+            real_size: getValue("realSize", 12),
+          },
+          morphology: {
+            erosion_iterations: parseInt(getValue("erosionIterations", 0)),
+            dilation_iterations: parseInt(getValue("dilationIterations", 2)),
+            kernel_size: parseInt(getValue("kernelSize", 3)),
+            min_area: parseInt(getValue("minArea", 150)),
+          },
+          timestamp: Date.now(),
+        };
+        sendToROS("/calibration_update", data);
+      }
+
+      function publishJoystickData() {
+        const data = {
+          joystick: joystickData,
+          timestamp: Date.now(),
+        };
+        sendToROS("/joystick_control", data);
+      }
+
+      function publishKeyboardData() {
+        const currentCommandEl = document.getElementById("currentCommand");
+        const data = {
+          active_keys: Array.from(activeKeys),
+          command: currentCommandEl ? currentCommandEl.textContent : "STOP",
+          timestamp: Date.now(),
+        };
+        sendToROS("/keyboard_control", data);
+      }
+
+      function sendToROS(endpoint, data) {
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            updatePublishStats();
+            console.log("Published to ROS:", result);
+          })
+          .catch((error) => {
+            console.error("ROS Publish Error:", error);
+            const rosStatus = document.getElementById("rosStatus");
+            if (rosStatus) {
+              rosStatus.innerHTML = "❌ ROS Connection Error";
+              rosStatus.className = "error-display";
+            }
+          });
+      }
+
+      function updatePublishStats() {
+        publishCount++;
+        const publishCountEl = document.getElementById("publishCount");
+        if (publishCountEl) publishCountEl.textContent = publishCount;
+
+        const now = Date.now();
+        const frequency = 1000 / (now - lastPublishTime);
+        const publishFreqEl = document.getElementById("publishFreq");
+        if (publishFreqEl) publishFreqEl.textContent = frequency.toFixed(1);
+        lastPublishTime = now;
+
+        const rosStatus = document.getElementById("rosStatus");
+        if (rosStatus) {
+          rosStatus.innerHTML = "✅ Green Detection Node Active";
+          rosStatus.className = "success-display";
+        }
+      }
+
+      // Status updates
+      function startStatusUpdates() {
+        setInterval(fetchDetectionStatus, 100); // 10Hz update rate
+      }
+
+      function fetchDetectionStatus() {
+        if (currentMode !== "auto") return;
+
+        fetch("/detection_status")
+          .then((response) => response.json())
+          .then((data) => {
+            updateDetectionDisplay(data);
+          })
+          .catch((error) => {
+            console.error("Status update error:", error);
+          });
+      }
+
+      function updateDetectionDisplay(data) {
+        const detectionStatus = document.getElementById("detectionStatus");
+        if (detectionStatus) {
+          detectionStatus.textContent = data.detected
+            ? "GREEN DETECTED ✅"
+            : "SEARCHING 🔍";
+        }
+
+        if (data.detected) {
+          const objectPosition = document.getElementById("objectPosition");
+          const objectDistance = document.getElementById("objectDistance");
+          const confidence = document.getElementById("confidence");
+
+          if (objectPosition)
+            objectPosition.textContent = `(${data.center_x}, ${data.center_y})`;
+          if (objectDistance)
+            objectDistance.textContent = data.distance
+              ? data.distance.toFixed(1)
+              : "N/A";
+          if (confidence)
+            confidence.textContent = data.confidence
+              ? `${(data.confidence * 100).toFixed(0)}%`
+              : "0%";
+        } else {
+          const objectPosition = document.getElementById("objectPosition");
+          const objectDistance = document.getElementById("objectDistance");
+          const confidence = document.getElementById("confidence");
+
+          if (objectPosition) objectPosition.textContent = "N/A";
+          if (objectDistance) objectDistance.textContent = "N/A";
+          if (confidence) confidence.textContent = "0%";
+        }
+      }
+
+      // Visual effects
+      setInterval(() => {
+        const videoStreams = document.querySelectorAll(
+          'img[id^="videoStream"]'
+        );
+        if (currentMode === "auto") {
+          videoStreams.forEach((stream) =>
+            stream.classList.toggle("recording")
+          );
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>
