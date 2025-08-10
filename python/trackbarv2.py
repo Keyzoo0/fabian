@@ -74,7 +74,7 @@ def set_trackbars_from_config(config):
         cv2.setTrackbarPos('Calib Pixel Area', 'Trackbar', config.get('calibration', {}).get('calib_pixel_area', 5000))
 
 # Inisialisasi kamera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(2)
 
 # Dapatkan resolusi kamera
 ret, test_frame = cap.read()
@@ -215,6 +215,19 @@ while True:
             cv2.circle(frame_with_box, (center_x, center_y), 5, (255, 0, 0), -1)
             cv2.line(frame_with_box, (center_x-10, center_y), (center_x+10, center_y), (255, 0, 0), 2)
             cv2.line(frame_with_box, (center_x, center_y-10), (center_x, center_y+10), (255, 0, 0), 2)
+            
+            # Hitung error jarak dari center frame
+            error_x = center_x - frame_center_x  # Positif = kanan, Negatif = kiri
+            error_y = center_y - frame_center_y  # Positif = bawah, Negatif = atas
+            
+            # Gambar garis dari center frame ke center objek
+            cv2.line(frame_with_box, (frame_center_x, frame_center_y), (center_x, center_y), (0, 255, 255), 2)
+            
+            # Tambahkan text info error X dan Y
+            cv2.putText(frame_with_box, f'Error X: {error_x:+d} px', (x, y - 50), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            cv2.putText(frame_with_box, f'Error Y: {error_y:+d} px', (x, y - 70), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
     
     # Konversi mask ke 3 channel untuk penggabungan
     mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
