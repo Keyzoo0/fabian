@@ -1,14 +1,14 @@
 calibration:
   calib_distance_cm: 50
-  calib_pixel_area: 22800
+  calib_pixel_area: 50000
   min_area_threshold: 500
 hsv:
-  h_max: 83
-  h_min: 33
-  s_max: 233
-  s_min: 159
-  v_max: 190
-  v_min: 89
+  h_max: 54
+  h_min: 31
+  s_max: 255
+  s_min: 153
+  v_max: 189
+  v_min: 55
 morphology:
   closing: 1
   dilation: 3

@@ -29,7 +29,8 @@ def save_config():
         },
         'calibration': {
             'calib_distance_cm': cv2.getTrackbarPos('Calib Distance (cm)', 'Trackbar'),
-            'calib_pixel_area': cv2.getTrackbarPos('Calib Pixel Area', 'Trackbar')
+            'calib_pixel_area': cv2.getTrackbarPos('Calib Pixel Area', 'Trackbar'),
+            'min_area_threshold': cv2.getTrackbarPos('Min Area Threshold', 'Trackbar')
         }
     }
     
@@ -72,6 +73,7 @@ def set_trackbars_from_config(config):
         # Set calibration trackbars dengan default values
         cv2.setTrackbarPos('Calib Distance (cm)', 'Trackbar', config.get('calibration', {}).get('calib_distance_cm', 50))
         cv2.setTrackbarPos('Calib Pixel Area', 'Trackbar', config.get('calibration', {}).get('calib_pixel_area', 5000))
+        cv2.setTrackbarPos('Min Area Threshold', 'Trackbar', config.get('calibration', {}).get('min_area_threshold', 500))
 
 # Inisialisasi kamera
 cap = cv2.VideoCapture(2)
@@ -109,6 +111,7 @@ cv2.createTrackbar('Closing', 'Trackbar', 0, 10, nothing)
 # Buat trackbar untuk kalibrasi jarak
 cv2.createTrackbar('Calib Distance (cm)', 'Trackbar', 50, 200, nothing)  # Default: 50 cm
 cv2.createTrackbar('Calib Pixel Area', 'Trackbar', 5000, max_pixel_area, nothing)  # Max: setengah area frame
+cv2.createTrackbar('Min Area Threshold', 'Trackbar', 500, max_pixel_area, nothing)  # Default: 500 pixels
 
 # Load konfigurasi yang tersimpan
 config = load_config()
@@ -139,6 +142,7 @@ while True:
     # Ambil nilai kalibrasi jarak
     calib_distance_cm = cv2.getTrackbarPos('Calib Distance (cm)', 'Trackbar')
     calib_pixel_area = cv2.getTrackbarPos('Calib Pixel Area', 'Trackbar')
+    min_area_threshold = cv2.getTrackbarPos('Min Area Threshold', 'Trackbar')
     
     # Buat range HSV
     lower = np.array([h_min, s_min, v_min])
@@ -190,7 +194,7 @@ while True:
         area = cv2.contourArea(largest_contour)
         
         # Hanya gambar bounding box jika area cukup besar (filter noise)
-        if area > 500:  # threshold area minimum
+        if area > min_area_threshold:  # threshold area minimum dari trackbar
             x, y, w, h = cv2.boundingRect(largest_contour)
             
             # Hitung jarak berdasarkan kalibrasi (menggunakan area)
