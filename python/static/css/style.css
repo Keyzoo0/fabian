@@ -1,0 +1,349 @@
+/* Custom slider styling for better cross-browser support */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+input[type="range"]::-webkit-slider-track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #0ea5e9;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #0284c7;
+    transform: scale(1.1);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #0ea5e9;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    border: none;
+}
+
+/* Focus states */
+input[type="range"]:focus {
+    outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+}
+
+/* Custom styles for frame containers */
+.frame-container {
+    position: relative;
+    background: #000;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.frame-container img {
+    transition: transform 0.3s ease;
+}
+
+.frame-container:hover img {
+    transform: scale(1.02);
+}
+
+/* Animation for toast notifications */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Status indicator pulse animation */
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+select,
+input[type="range"] {
+    transition: all 0.2s ease;
+}
+
+/* Button hover effects */
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:disabled {
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Custom scrollbar for better appearance */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1280px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1280px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .xl\\:col-span-3 {
+        grid-column: span 1;
+    }
+
+    .xl\\:col-span-1 {
+        grid-column: span 1;
+    }
+
+    /* Stack camera frames vertically on mobile */
+    .frame-container {
+        min-height: 200px;
+    }
+
+    /* Adjust header text size */
+    h1 {
+        font-size: 1.25rem;
+    }
+
+    h2,
+    h3 {
+        font-size: 1.125rem;
+    }
+
+    /* Make buttons full width on mobile */
+    .space-x-4>button {
+        margin: 0;
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+
+    /* Adjust grid spacing */
+    .grid {
+        gap: 1rem;
+    }
+
+    /* Adjust padding for mobile */
+    .p-6 {
+        padding: 1rem;
+    }
+
+    .px-6 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+
+    /* Further mobile optimizations */
+    .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .grid-cols-6 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-cols-3 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    /* Adjust text sizes for very small screens */
+    .text-2xl {
+        font-size: 1.125rem;
+    }
+
+    .text-lg {
+        font-size: 1rem;
+    }
+
+    /* Make object data cards stack better */
+    .grid-cols-2.md\\:grid-cols-6 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Hover effects for cards */
+.shadow-lg {
+    transition: box-shadow 0.3s ease;
+}
+
+.bg-white:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Focus styles for accessibility */
+select:focus,
+button:focus {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 2px;
+}
+
+/* Custom select styling */
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+
+/* Improve text readability */
+.text-gray-900 {
+    color: #111827;
+}
+
+.text-gray-700 {
+    color: #374151;
+}
+
+.text-gray-600 {
+    color: #4b5563;
+}
+
+/* Enhanced button styles */
+button {
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Custom utility classes */
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure proper aspect ratio for camera frames */
+.frame-container {
+    aspect-ratio: 4/3;
+}
+
+.frame-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles if needed */
+}
