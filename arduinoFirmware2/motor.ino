@@ -28,6 +28,7 @@ void writePwm() {
   }
 }
 
+
 void setupMotor(){
    pinMode(MTR1A, OUTPUT);
   pinMode(MTR1B, OUTPUT);
@@ -45,4 +46,5 @@ void setupMotor(){
   ledcAttachPin(MTR1B, MTR1B_PWM_CHANNEL);
   ledcAttachPin(MTR2A, MTR2A_PWM_CHANNEL);
   ledcAttachPin(MTR2B, MTR2B_PWM_CHANNEL);
+
 }

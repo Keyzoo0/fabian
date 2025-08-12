@@ -3,487 +3,1614 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Color Detection Calibration System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Simplified Object Tracking Control</title>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: "#1e40af",
-              secondary: "#64748b",
-              accent: "#0ea5e9",
-              success: "#059669",
-              warning: "#d97706",
-              danger: "#dc2626",
-            },
-          },
-        },
-      };
-    </script>
     <style>
-      .frame-container {
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .header-left h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fbbf24;
+        animation: pulse 2s infinite;
+      }
+
+      .status-dot.connected {
+        background: #10b981;
+      }
+      .status-dot.disconnected {
+        background: #ef4444;
+      }
+
+      .main-container {
+        display: grid;
+        grid-template-columns: 300px 1fr 300px;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        min-height: calc(100vh - 80px);
+      }
+
+      /* Left Panel - Control Mode */
+      .left-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+        max-height: calc(100vh - 120px);
+      }
+
+      .control-section {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-header {
+        padding: 1rem;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .mode-header {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      }
+
+      .manual-header {
+        background: linear-gradient(135deg, #feca57, #ff9ff3);
+      }
+
+      .auto-header {
+        background: linear-gradient(135deg, #a55eea, #26de81);
+      }
+
+      .camera-header {
+        background: linear-gradient(135deg, #45b7d1, #96c93d);
+      }
+
+      .system-header {
+        background: linear-gradient(135deg, #6c757d, #495057);
+      }
+
+      .section-content {
+        padding: 1.5rem;
+        background: white;
+      }
+
+      .control-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .control-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+      }
+
+      .control-group span {
+        color: #2d3748;
+        font-weight: 600;
+      }
+
+      /* Mode Selection */
+      .mode-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .mode-btn {
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .mode-btn.active {
+        border-color: #667eea;
+        background: #667eea;
+        color: white;
+      }
+
+      .mode-btn:hover {
+        border-color: #667eea;
+      }
+
+      /* WASD Controls - REVISED */
+      .wasd-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        max-width: 150px;
+        margin: 0 auto;
+      }
+
+      .wasd-key {
+        width: 40px;
+        height: 40px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+      }
+
+      /* REVISED: Only show active state for current pressed key */
+      .wasd-key.current {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+      }
+
+      .wasd-key.w {
+        grid-column: 2;
+      }
+      .wasd-key.a {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      .wasd-key.s {
+        grid-column: 2;
+        grid-row: 2;
+      }
+      .wasd-key.d {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      /* PID Input */
+      .pid-input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        font-size: 0.875rem;
+      }
+
+      .pid-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .pid-group {
+        text-align: center;
+      }
+
+      .pid-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+      }
+
+      /* Buttons */
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #10b981, #065f46);
+        color: white;
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        color: white;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        color: white;
+      }
+      .btn-secondary {
+        background: linear-gradient(135deg, #6b7280, #374151);
+        color: white;
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Center Panel - Camera Feeds */
+      .center-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .main-camera {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        flex: 2;
+      }
+
+      .camera-header-display {
+        background: linear-gradient(135deg, #1f2937, #111827);
+        color: white;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .camera-header-display h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .main-frame {
         aspect-ratio: 4/3;
+        position: relative;
         background: #000;
+        overflow: hidden;
       }
-      .slider-thumb::-webkit-slider-thumb {
-        appearance: none;
+
+      .camera-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .frame-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        z-index: 10;
+      }
+
+      /* Processing Views */
+      .processing-views {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        flex: 1;
+      }
+
+      .processing-frame {
+        aspect-ratio: 4/3;
+        position: relative;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .processing-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Right Panel - Data */
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .data-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .tracking-header {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      }
+      .info-header {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+      }
+
+      /* Data Grid */
+      .data-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .data-card {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+      }
+
+      .data-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .position-x {
+        border-left-color: #3b82f6;
+      }
+      .position-y {
+        border-left-color: #10b981;
+      }
+      .error-x {
+        border-left-color: #ef4444;
+      }
+      .error-y {
+        border-left-color: #f59e0b;
+      }
+      .distance {
+        border-left-color: #8b5cf6;
+      }
+      .area {
+        border-left-color: #06b6d4;
+      }
+
+      .data-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+      }
+
+      .data-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+      }
+
+      .data-unit {
+        font-size: 0.625rem;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* Status Indicators */
+      .status-indicators {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+      }
+
+      .indicator-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+      }
+
+      .indicator-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .indicator-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ef4444;
+        transition: all 0.3s ease;
+      }
+
+      .indicator-dot.active {
+        background: #10b981;
+        animation: pulse 2s infinite;
+      }
+
+      /* Control Status - REVISED */
+      .control-status {
+        background: #f0f9ff;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+      }
+
+      .control-status h4 {
+        color: #0369a1;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+        font-size: 0.75rem;
+      }
+
+      .status-value {
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      /* REVISED: Last key display */
+      .last-key-display {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        text-align: center;
+      }
+
+      .last-key-display h4 {
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .last-key-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #10b981;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .last-key-value.none {
+        color: #9ca3af;
+      }
+
+      /* Toast Notifications */
+      #toast-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .toast {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        padding: 1rem 1.5rem;
+        min-width: 300px;
+        max-width: 400px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+        border-left: 4px solid;
+      }
+
+      .toast.show {
+        transform: translateX(0);
+      }
+
+      .toast.success {
+        border-left-color: #10b981;
+      }
+      .toast.error {
+        border-left-color: #ef4444;
+      }
+      .toast.warning {
+        border-left-color: #f59e0b;
+      }
+      .toast.info {
+        border-left-color: #3b82f6;
+      }
+
+      .toast-icon {
+        font-size: 1.25rem;
+      }
+      .toast.success .toast-icon {
+        color: #10b981;
+      }
+      .toast.error .toast-icon {
+        color: #ef4444;
+      }
+      .toast.warning .toast-icon {
+        color: #f59e0b;
+      }
+      .toast.info .toast-icon {
+        color: #3b82f6;
+      }
+
+      .toast-content {
+        flex: 1;
+      }
+      .toast-message {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1f2937;
+      }
+
+      .toast-close {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 0;
         width: 20px;
         height: 20px;
-        border-radius: 50%;
-        background: #0ea5e9;
-        cursor: pointer;
-        border: 2px solid white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
       }
-      .slider-thumb::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #0ea5e9;
-        cursor: pointer;
-        border: 2px solid white;
+
+      .toast-close:hover {
+        background: #f3f4f6;
+        color: #6b7280;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1200px) {
+        .main-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto auto;
+        }
+
+        .data-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .processing-views {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+
+        .data-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .processing-views {
+          grid-template-columns: 1fr;
+        }
+
+        .mode-selector {
+          grid-template-columns: 1fr;
+        }
+
+        .button-group {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
-  <body class="bg-gray-100 min-h-screen">
+  <body>
     <!-- Header -->
-    <header
-      class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg"
-    >
-      <div class="container mx-auto px-6 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <i class="fas fa-camera text-2xl"></i>
-            <h1 class="text-2xl font-bold">
-              Color Detection Calibration System
-            </h1>
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <i class="fas fa-robot"></i>
+          <h1>Object Tracking Control System</h1>
+        </div>
+        <div class="header-right">
+          <div class="status-indicator">
+            <div class="status-dot" id="status-indicator"></div>
+            <span id="status-text">Connecting...</span>
           </div>
-          <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-2">
-              <div
-                class="w-3 h-3 rounded-full bg-green-400 animate-pulse"
-                id="status-indicator"
-              ></div>
-              <span class="text-sm" id="status-text">Connecting...</span>
-            </div>
+          <div class="serial-status">
+            Serial: <span id="serial-status">Connected</span>
           </div>
         </div>
       </div>
     </header>
 
-    <div class="container mx-auto px-6 py-6">
-      <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <!-- Camera Display - Spans 3 columns on large screens -->
-        <div class="xl:col-span-3">
-          <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div class="bg-gray-800 text-white px-6 py-4">
-              <h2 class="text-lg font-semibold flex items-center">
-                <i class="fas fa-video mr-2"></i>
-                Camera Feed Display
-              </h2>
+    <!-- Main Content -->
+    <main class="main-container">
+      <!-- Left Panel - Control Settings -->
+      <aside class="left-panel">
+        <!-- Control Mode Selection -->
+        <div class="control-section">
+          <div class="section-header mode-header">
+            <i class="fas fa-toggle-on"></i>
+            <h3>Control Mode</h3>
+          </div>
+          <div class="section-content">
+            <div class="mode-selector">
+              <div
+                class="mode-btn active"
+                id="manual-mode-btn"
+                onclick="setControlMode('manual')"
+              >
+                <i class="fas fa-gamepad"></i><br />Manual
+              </div>
+              <div
+                class="mode-btn"
+                id="auto-mode-btn"
+                onclick="setControlMode('auto')"
+              >
+                <i class="fas fa-robot"></i><br />Auto PID
+              </div>
             </div>
-
-            <div class="p-6">
-              <!-- Frame Display Grid -->
-              <div class="grid grid-cols-2 gap-4 mb-6">
-                <div
-                  class="frame-container relative rounded-lg overflow-hidden border-2 border-gray-300"
-                >
-                  <div
-                    class="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm z-10"
-                  >
-                    Original + BBox
-                  </div>
-                  <img
-                    id="original-frame"
-                    class="w-full h-full object-cover"
-                    src=""
-                    alt="Original Frame"
-                  />
-                </div>
-
-                <div
-                  class="frame-container relative rounded-lg overflow-hidden border-2 border-gray-300"
-                >
-                  <div
-                    class="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm z-10"
-                  >
-                    HSV
-                  </div>
-                  <img
-                    id="hsv-frame"
-                    class="w-full h-full object-cover"
-                    src=""
-                    alt="HSV Frame"
-                  />
-                </div>
-
-                <div
-                  class="frame-container relative rounded-lg overflow-hidden border-2 border-gray-300"
-                >
-                  <div
-                    class="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm z-10"
-                  >
-                    Mask
-                  </div>
-                  <img
-                    id="mask-frame"
-                    class="w-full h-full object-cover"
-                    src=""
-                    alt="Mask Frame"
-                  />
-                </div>
-
-                <div
-                  class="frame-container relative rounded-lg overflow-hidden border-2 border-gray-300"
-                >
-                  <div
-                    class="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm z-10"
-                  >
-                    Result
-                  </div>
-                  <img
-                    id="result-frame"
-                    class="w-full h-full object-cover"
-                    src=""
-                    alt="Result Frame"
-                  />
-                </div>
-              </div>
-
-              <!-- Control Buttons -->
-              <div class="flex items-center justify-center space-x-4">
-                <button
-                  id="start-btn"
-                  class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-                >
-                  <i class="fas fa-play mr-2"></i>Start Camera
-                </button>
-                <button
-                  id="stop-btn"
-                  class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-                  disabled
-                >
-                  <i class="fas fa-stop mr-2"></i>Stop Camera
-                </button>
-                <button
-                  id="save-btn"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-                >
-                  <i class="fas fa-save mr-2"></i>Save Config
-                </button>
-              </div>
+            <div class="control-status">
+              <h4>Current Mode: <span id="current-mode">Manual</span></h4>
             </div>
           </div>
+        </div>
 
-          <!-- Object Tracking Info -->
-          <div class="bg-white rounded-lg shadow-lg mt-6">
-            <div class="bg-red-600 text-white px-6 py-3">
-              <h3 class="text-lg font-semibold flex items-center">
-                <i class="fas fa-ruler mr-2"></i>
-                Distance Calibration
-              </h3>
+        <!-- Manual Control -->
+        <div class="control-section" id="manual-section">
+          <div class="section-header manual-header">
+            <i class="fas fa-gamepad"></i>
+            <h3>Manual Control (WASD)</h3>
+          </div>
+          <div class="section-content">
+            <div class="wasd-controls">
+              <div class="wasd-key w" id="key-w">W</div>
+              <div class="wasd-key a" id="key-a">A</div>
+              <div class="wasd-key s" id="key-s">S</div>
+              <div class="wasd-key d" id="key-d">D</div>
             </div>
-            <div class="p-6 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Calib Distance (cm):
-                  <span
-                    class="text-green-600 font-bold"
-                    id="calib-distance-value"
-                    >50</span
-                  >
-                </label>
-                <input
-                  type="range"
-                  id="calib-distance"
-                  min="10"
-                  max="200"
-                  value="50"
-                  class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Calib Pixel Area:
-                  <span
-                    class="text-green-600 font-bold"
-                    id="calib-pixel-area-value"
-                    >22800</span
-                  >
-                </label>
-                <input
-                  type="range"
-                  id="calib-pixel-area"
-                  min="1000"
-                  max="100000"
-                  value="22800"
-                  class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Min Area Threshold:
-                  <span
-                    class="text-green-600 font-bold"
-                    id="min-area-threshold-value"
-                    >500</span
-                  >
-                </label>
-                <input
-                  type="range"
-                  id="min-area-threshold"
-                  min="100"
-                  max="10000"
-                  value="500"
-                  class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div class="bg-blue-50 p-3 rounded-lg">
-                <p class="text-xs text-blue-800">
-                  <i class="fas fa-info-circle mr-1"></i>
-                  Place object at known distance, set Calib Distance, then
-                  adjust Calib Pixel Area to current object area.
-                </p>
-              </div>
+            <p
+              style="
+                text-align: center;
+                margin-top: 1rem;
+                font-size: 0.75rem;
+                color: #6b7280;
+              "
+            >
+              Use W/A/S/D keys to control movement
+            </p>
+
+            <!-- Last key pressed display -->
+            <div class="last-key-display">
+              <h4>Last Key Pressed:</h4>
+              <div class="last-key-value" id="last-key-value">NONE</div>
             </div>
           </div>
+        </div>
 
-          <!-- Camera Controls -->
-          <div class="bg-white rounded-lg shadow-lg">
-            <div class="bg-purple-600 text-white px-6 py-4 rounded-t-lg">
-              <h3 class="text-lg font-semibold flex items-center">
-                <i class="fas fa-cog mr-2"></i>
-                Camera Controls
-              </h3>
+        <!-- Auto PID Control -->
+        <div class="control-section" id="auto-section" style="display: none">
+          <div class="section-header auto-header">
+            <i class="fas fa-robot"></i>
+            <h3>Auto PID Control</h3>
+          </div>
+          <div class="section-content">
+            <div class="control-group">
+              <label
+                >Setpoint Jarak (cm):
+                <span id="setpoint-value">50.0</span></label
+              >
+              <input
+                type="range"
+                id="setpoint-jarak"
+                min="10"
+                max="200"
+                step="1"
+                value="50"
+                oninput="updatePIDParam('setpoint_jarak', this.value)"
+              />
             </div>
-            <div class="p-6 space-y-4">
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2"
-                    >Auto Exposure</label
-                  >
-                  <select
-                    id="auto-exposure"
-                    class="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="0">Manual</option>
-                    <option value="1">Auto</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Exposure:
-                    <span class="text-purple-600 font-bold" id="exposure-value"
-                      >50</span
-                    >
-                  </label>
-                  <input
-                    type="range"
-                    id="exposure"
-                    min="0"
-                    max="100"
-                    value="50"
-                    class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2"
-                    >Auto WB</label
-                  >
-                  <select
-                    id="auto-wb"
-                    class="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="0">Manual</option>
-                    <option value="1">Auto</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    WB Temp:
-                    <span
-                      class="text-purple-600 font-bold"
-                      id="wb-temperature-value"
-                      >40</span
-                    >
-                  </label>
-                  <input
-                    type="range"
-                    id="wb-temperature"
-                    min="0"
-                    max="80"
-                    value="40"
-                    class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Brightness:
-                  <span class="text-purple-600 font-bold" id="brightness-value"
-                    >50</span
-                  >
-                </label>
+            <h4 style="margin: 1rem 0 0.5rem 0; color: #374151">PID Jarak:</h4>
+            <div class="pid-grid">
+              <div class="pid-group">
+                <label>Kp</label>
                 <input
-                  type="range"
-                  id="brightness"
-                  min="0"
-                  max="100"
-                  value="50"
-                  class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  type="number"
+                  class="pid-input"
+                  id="kp-jarak"
+                  value="1.0"
+                  step="0.1"
+                  onchange="updatePIDParam('kp_jarak', this.value)"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Contrast:
-                  <span class="text-purple-600 font-bold" id="contrast-value"
-                    >50</span
-                  >
-                </label>
+              <div class="pid-group">
+                <label>Ki</label>
                 <input
-                  type="range"
-                  id="contrast"
-                  min="0"
-                  max="100"
-                  value="50"
-                  class="slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  type="number"
+                  class="pid-input"
+                  id="ki-jarak"
+                  value="0.1"
+                  step="0.01"
+                  onchange="updatePIDParam('ki_jarak', this.value)"
+                />
+              </div>
+              <div class="pid-group">
+                <label>Kd</label>
+                <input
+                  type="number"
+                  class="pid-input"
+                  id="kd-jarak"
+                  value="0.05"
+                  step="0.01"
+                  onchange="updatePIDParam('kd_jarak', this.value)"
+                />
+              </div>
+            </div>
+
+            <h4 style="margin: 1rem 0 0.5rem 0; color: #374151">
+              PID Arah Hadap:
+            </h4>
+            <div class="pid-grid">
+              <div class="pid-group">
+                <label>Kp</label>
+                <input
+                  type="number"
+                  class="pid-input"
+                  id="kp-arahhadap"
+                  value="1.0"
+                  step="0.1"
+                  onchange="updatePIDParam('kp_arahhadap', this.value)"
+                />
+              </div>
+              <div class="pid-group">
+                <label>Ki</label>
+                <input
+                  type="number"
+                  class="pid-input"
+                  id="ki-arahhadap"
+                  value="0.1"
+                  step="0.01"
+                  onchange="updatePIDParam('ki_arahhadap', this.value)"
+                />
+              </div>
+              <div class="pid-group">
+                <label>Kd</label>
+                <input
+                  type="number"
+                  class="pid-input"
+                  id="kd-arahhadap"
+                  value="0.05"
+                  step="0.01"
+                  onchange="updatePIDParam('kd_arahhadap', this.value)"
                 />
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Current HSV Values Display -->
-          <div class="bg-white rounded-lg shadow-lg">
-            <div class="bg-gray-800 text-white px-6 py-3">
-              <h3 class="text-lg font-semibold">Current HSV Values</h3>
+        <!-- Camera Controls -->
+        <div class="control-section">
+          <div class="section-header camera-header">
+            <i class="fas fa-cog"></i>
+            <h3>Camera Settings</h3>
+          </div>
+          <div class="section-content">
+            <div class="control-group">
+              <label>Brightness: <span id="brightness-value">50</span></label>
+              <input
+                type="range"
+                id="brightness"
+                min="0"
+                max="100"
+                value="50"
+                oninput="updateCameraControl('brightness', this.value)"
+              />
             </div>
-            <div class="p-6">
-              <div class="grid grid-cols-3 gap-3">
-                <div class="bg-red-100 p-3 rounded-lg text-center">
-                  <div class="text-sm text-red-700 mb-1">H</div>
-                  <div class="text-sm font-bold text-red-800" id="current-h">
-                    0-179
-                  </div>
-                </div>
-                <div class="bg-green-100 p-3 rounded-lg text-center">
-                  <div class="text-sm text-green-700 mb-1">S</div>
-                  <div class="text-sm font-bold text-green-800" id="current-s">
-                    0-255
-                  </div>
-                </div>
-                <div class="bg-blue-100 p-3 rounded-lg text-center">
-                  <div class="text-sm text-blue-700 mb-1">V</div>
-                  <div class="text-sm font-bold text-blue-800" id="current-v">
-                    0-255
-                  </div>
-                </div>
-              </div>
+            <div class="control-group">
+              <label>Contrast: <span id="contrast-value">50</span></label>
+              <input
+                type="range"
+                id="contrast"
+                min="0"
+                max="100"
+                value="50"
+                oninput="updateCameraControl('contrast', this.value)"
+              />
             </div>
           </div>
+        </div>
 
-          <!-- Reset Button -->
-          <div class="bg-white rounded-lg shadow-lg">
-            <div class="p-6">
+        <!-- System Controls -->
+        <div class="control-section">
+          <div class="section-header system-header">
+            <i class="fas fa-tools"></i>
+            <h3>System</h3>
+          </div>
+          <div class="section-content">
+            <div class="button-group">
+              <button
+                id="start-btn"
+                class="btn btn-success"
+                onclick="startSystem()"
+              >
+                <i class="fas fa-play"></i>Start
+              </button>
+              <button
+                id="stop-btn"
+                class="btn btn-danger"
+                disabled
+                onclick="stopSystem()"
+              >
+                <i class="fas fa-stop"></i>Stop
+              </button>
+            </div>
+            <div class="button-group">
+              <button
+                id="save-btn"
+                class="btn btn-primary"
+                onclick="saveConfiguration()"
+              >
+                <i class="fas fa-save"></i>Save
+              </button>
               <button
                 id="reset-btn"
-                class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-semibold transition-colors duration-200"
+                class="btn btn-secondary"
+                onclick="resetToDefault()"
               >
-                <i class="fas fa-undo mr-2"></i>Reset to Default
+                <i class="fas fa-undo"></i>Reset
               </button>
             </div>
           </div>
+        </div>
+      </aside>
 
-          <!-- Calibration Info -->
-          <div class="bg-white rounded-lg shadow-lg">
-            <div class="bg-yellow-600 text-white px-6 py-3">
-              <h3 class="text-lg font-semibold flex items-center">
-                <i class="fas fa-info-circle mr-2"></i>
-                Instructions
-              </h3>
-            </div>
-            <div class="p-6">
-              <div class="space-y-3 text-sm">
-                <div class="flex items-start space-x-2">
-                  <span class="text-blue-600 font-bold">S</span>
-                  <span class="text-gray-700">Save Config (Ctrl+S)</span>
-                </div>
-                <div class="flex items-start space-x-2">
-                  <span class="text-blue-600 font-bold">R</span>
-                  <span class="text-gray-700">Reset Default (Ctrl+R)</span>
-                </div>
-                <div class="flex items-start space-x-2">
-                  <span class="text-blue-600 font-bold">Space</span>
-                  <span class="text-gray-700"
-                    >Start/Stop Camera (Ctrl+Space)</span
-                  >
-                </div>
+      <!-- Center Panel - Camera Feeds -->
+      <section class="center-panel">
+        <!-- Main Camera Display -->
+        <div class="main-camera">
+          <div class="camera-header-display">
+            <h2><i class="fas fa-video"></i>Object Tracking View</h2>
+          </div>
+          <div class="camera-frame main-frame">
+            <div class="frame-label">Main + Tracking</div>
+            <img id="original-frame" src="" alt="Original Frame" />
+          </div>
+        </div>
+
+        <!-- Processing Views -->
+        <div class="processing-views">
+          <div class="processing-frame">
+            <div class="frame-label">HSV</div>
+            <img id="hsv-frame" src="" alt="HSV Frame" />
+          </div>
+          <div class="processing-frame">
+            <div class="frame-label">Mask</div>
+            <img id="mask-frame" src="" alt="Mask Frame" />
+          </div>
+          <div class="processing-frame">
+            <div class="frame-label">Result</div>
+            <img id="result-frame" src="" alt="Result Frame" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel - Object Data -->
+      <aside class="right-panel">
+        <!-- Object Tracking Monitor -->
+        <div class="data-section">
+          <div class="section-header tracking-header">
+            <i class="fas fa-crosshairs"></i>
+            <h3>Object Data</h3>
+          </div>
+          <div class="section-content">
+            <div class="data-grid">
+              <div class="data-card position-x">
+                <div class="data-label">Position X</div>
+                <div class="data-value" id="object-x">0</div>
+                <div class="data-unit">pixels</div>
               </div>
+              <div class="data-card position-y">
+                <div class="data-label">Position Y</div>
+                <div class="data-value" id="object-y">0</div>
+                <div class="data-unit">pixels</div>
+              </div>
+              <div class="data-card error-x">
+                <div class="data-label">Error X</div>
+                <div class="data-value" id="error-x">0</div>
+                <div class="data-unit">pixels</div>
+              </div>
+              <div class="data-card error-y">
+                <div class="data-label">Error Y</div>
+                <div class="data-value" id="error-y">0</div>
+                <div class="data-unit">pixels</div>
+              </div>
+              <div class="data-card distance">
+                <div class="data-label">Distance</div>
+                <div class="data-value" id="object-distance">0.0 cm</div>
+                <div class="data-unit">estimated</div>
+              </div>
+              <div class="data-card area">
+                <div class="data-label">Area</div>
+                <div class="data-value" id="object-area">0 px</div>
+                <div class="data-unit">pixels²</div>
+              </div>
+            </div>
 
-              <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                <p class="text-xs text-gray-600">
-                  <strong>Calibration:</strong> Place object at known distance →
-                  Set Calib Distance → Note object area → Set Calib Pixel Area
-                </p>
+            <!-- Status Indicators -->
+            <div class="status-indicators">
+              <div class="indicator-item">
+                <span>Object Detected</span>
+                <div class="indicator-dot" id="detection-indicator"></div>
+              </div>
+              <div class="indicator-item">
+                <span>System Active</span>
+                <div class="indicator-dot" id="system-indicator"></div>
+              </div>
+              <div class="indicator-item">
+                <span>Serial TX</span>
+                <div
+                  class="indicator-dot active"
+                  id="serial-tx-indicator"
+                ></div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Serial Data Monitor -->
+        <div class="data-section">
+          <div class="section-header info-header">
+            <i class="fas fa-terminal"></i>
+            <h3>Serial Output</h3>
+          </div>
+          <div class="section-content">
+            <div
+              style="
+                background: #f8fafc;
+                padding: 1rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.75rem;
+                min-height: 100px;
+                max-height: 200px;
+                overflow-y: auto;
+              "
+              id="serial-monitor"
+            >
+              Waiting for data...
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
 
     <!-- Toast Notification Container -->
-    <div
-      id="toast-container"
-      class="fixed bottom-4 right-4 z-50 space-y-2"
-    ></div>
+    <div id="toast-container"></div>
 
-    <!-- Loading Overlay (Optional) -->
-    <div
-      id="loading-overlay"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
-    >
-      <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
-        <div
-          class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-        ></div>
-        <span class="text-gray-700 font-medium">Loading...</span>
-      </div>
-    </div>
+    <script>
+      class SimplifiedControlApp {
+        constructor() {
+          this.isRunning = false;
+          this.intervalId = null;
+          this.dataIntervalId = null;
+          this.controlMode = "manual";
+          this.lastKeyPressed = "none";
+          this.pidParams = {
+            setpoint_jarak: 50.0,
+            kp_jarak: 1.0,
+            ki_jarak: 0.1,
+            kd_jarak: 0.05,
+            kp_arahhadap: 1.0,
+            ki_arahhadap: 0.1,
+            kd_arahhadap: 0.05,
+          };
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-6 mt-12">
-      <div class="container mx-auto px-6">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <div class="mb-4 md:mb-0">
-            <p class="text-sm">© 2024 Color Detection Calibration System</p>
-            <p class="text-xs text-gray-400">
-              Built with Flask, OpenCV, and Tailwind CSS
-            </p>
-          </div>
-          <div class="flex items-center space-x-6 text-sm">
-            <div class="flex items-center space-x-2">
-              <i class="fas fa-code text-blue-400"></i>
-              <span>Version 1.0</span>
+          this.init();
+        }
+
+        init() {
+          this.loadInitialValues();
+          this.updateStatusIndicator("connecting", "Initializing...");
+          this.setupKeyboardListener();
+          console.log("Simplified Control App initialized");
+        }
+
+        setupKeyboardListener() {
+          // FIXED: Send key presses to backend
+          document.addEventListener("keydown", (e) => {
+            if (this.controlMode === "manual" && this.isRunning) {
+              const key = e.key.toLowerCase();
+              if (["w", "a", "s", "d"].includes(key)) {
+                e.preventDefault();
+                if (this.lastKeyPressed !== key) {
+                  this.lastKeyPressed = key;
+                  this.updateKeyDisplay();
+                  this.sendKeyToBackend(key);
+                  console.log(`Last key pressed: ${key.toUpperCase()}`);
+                }
+              }
+            }
+          });
+
+          document.addEventListener("keyup", (e) => {
+            if (this.controlMode === "manual" && this.isRunning) {
+              const key = e.key.toLowerCase();
+              if (["w", "a", "s", "d"].includes(key)) {
+                e.preventDefault();
+                if (this.lastKeyPressed === key) {
+                  this.lastKeyPressed = "none";
+                  this.updateKeyDisplay();
+                  this.sendKeyToBackend("none");
+                  console.log(
+                    `Key ${key.toUpperCase()} released - set to none`
+                  );
+                }
+              }
+            }
+          });
+        }
+
+        // NEW: Send key state to backend
+        async sendKeyToBackend(key) {
+          try {
+            await fetch("/update_last_key", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ key: key }),
+            });
+          } catch (error) {
+            console.error("Error sending key to backend:", error);
+          }
+        }
+
+        // Update key display for last key only
+        updateKeyDisplay() {
+          // Clear all active states
+          ["w", "a", "s", "d"].forEach((key) => {
+            const element = document.getElementById(`key-${key}`);
+            element.classList.remove("current");
+          });
+
+          // Set current key if not none
+          if (this.lastKeyPressed !== "none") {
+            const element = document.getElementById(
+              `key-${this.lastKeyPressed}`
+            );
+            if (element) {
+              element.classList.add("current");
+            }
+          }
+
+          // Update last key display
+          const lastKeyDisplay = document.getElementById("last-key-value");
+          if (this.lastKeyPressed === "none") {
+            lastKeyDisplay.textContent = "NONE";
+            lastKeyDisplay.classList.add("none");
+          } else {
+            lastKeyDisplay.textContent = this.lastKeyPressed.toUpperCase();
+            lastKeyDisplay.classList.remove("none");
+          }
+        }
+
+        async loadInitialValues() {
+          try {
+            const response = await fetch("/get_all_values");
+            const data = await response.json();
+
+            this.controlMode = data.control_mode || "manual";
+            this.pidParams = data.pid_params || this.pidParams;
+            this.lastKeyPressed = data.last_key_pressed || "none";
+
+            this.updateAllControls();
+            console.log("Initial values loaded:", data);
+          } catch (error) {
+            console.error("Error loading initial values:", error);
+            this.showToast("Error loading initial values", "error");
+          }
+        }
+
+        updateAllControls() {
+          // Update mode buttons
+          document
+            .getElementById("manual-mode-btn")
+            .classList.toggle("active", this.controlMode === "manual");
+          document
+            .getElementById("auto-mode-btn")
+            .classList.toggle("active", this.controlMode === "auto");
+          document.getElementById("current-mode").textContent =
+            this.controlMode === "manual" ? "Manual" : "Auto PID";
+
+          // Show/hide sections
+          document.getElementById("manual-section").style.display =
+            this.controlMode === "manual" ? "block" : "none";
+          document.getElementById("auto-section").style.display =
+            this.controlMode === "auto" ? "block" : "none";
+
+          // Update PID values
+          Object.entries(this.pidParams).forEach(([key, value]) => {
+            const element = document.getElementById(key.replace("_", "-"));
+            if (element) {
+              element.value = value;
+              if (key === "setpoint_jarak") {
+                document.getElementById("setpoint-value").textContent = value;
+              }
+            }
+          });
+
+          this.updateKeyDisplay();
+        }
+
+        async startSystem() {
+          if (!this.isRunning) {
+            this.isRunning = true;
+            this.updateStatusIndicator("connected", "System Running");
+
+            const startBtn = document.getElementById("start-btn");
+            const stopBtn = document.getElementById("stop-btn");
+            const systemIndicator = document.getElementById("system-indicator");
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            systemIndicator.classList.add("active");
+
+            // Start frame updates
+            this.intervalId = setInterval(() => this.fetchFrames(), 100);
+            // Start object data updates
+            this.dataIntervalId = setInterval(
+              () => this.fetchObjectData(),
+              200
+            );
+
+            this.showToast("System started successfully", "success");
+            console.log("System started in", this.controlMode, "mode");
+          }
+        }
+
+        stopSystem() {
+          if (this.isRunning) {
+            this.isRunning = false;
+
+            clearInterval(this.intervalId);
+            clearInterval(this.dataIntervalId);
+
+            this.updateStatusIndicator("disconnected", "System Stopped");
+
+            const startBtn = document.getElementById("start-btn");
+            const stopBtn = document.getElementById("stop-btn");
+            const systemIndicator = document.getElementById("system-indicator");
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            systemIndicator.classList.remove("active");
+
+            // Clear all frames
+            ["original", "hsv", "mask", "result"].forEach((frameType) => {
+              const img = document.getElementById(frameType + "-frame");
+              if (img) img.src = "";
+            });
+
+            // Reset displays
+            this.updateObjectDataDisplay({
+              x: 0,
+              y: 0,
+              distance: 0,
+              error_x: 0,
+              error_y: 0,
+              area: 0,
+            });
+
+            // Reset last key
+            this.lastKeyPressed = "none";
+            this.updateKeyDisplay();
+            this.sendKeyToBackend("none");
+
+            document.getElementById("serial-monitor").textContent =
+              "System stopped.";
+            this.showToast("System stopped", "info");
+          }
+        }
+
+        async fetchFrames() {
+          if (!this.isRunning) return;
+
+          try {
+            const response = await fetch("/get_frames");
+            const data = await response.json();
+
+            if (data.error) {
+              console.error("Frame fetch error:", data.error);
+              this.updateStatusIndicator("disconnected", "Camera Error");
+              return;
+            }
+
+            // Update frame images
+            Object.entries(data).forEach(([frameType, frameData]) => {
+              const imgElement = document.getElementById(frameType + "-frame");
+              if (imgElement && frameData) {
+                imgElement.src = frameData;
+              }
+            });
+          } catch (error) {
+            console.error("Error fetching frames:", error);
+            this.updateStatusIndicator("disconnected", "Connection Error");
+          }
+        }
+
+        async fetchObjectData() {
+          if (!this.isRunning) return;
+
+          try {
+            const response = await fetch("/get_all_values");
+            const data = await response.json();
+
+            this.updateObjectDataDisplay(data.object_data);
+            this.updateSerialMonitor(data.object_data);
+          } catch (error) {
+            console.error("Error fetching object data:", error);
+          }
+        }
+
+        updateObjectDataDisplay(data) {
+          // Update data values
+          document.getElementById("object-x").textContent = data.x || 0;
+          document.getElementById("object-y").textContent = data.y || 0;
+          document.getElementById("error-x").textContent =
+            data.error_x > 0 ? `+${data.error_x}` : data.error_x || 0;
+          document.getElementById("error-y").textContent =
+            data.error_y > 0 ? `+${data.error_y}` : data.error_y || 0;
+          document.getElementById("object-distance").textContent = `${(
+            data.distance || 0
+          ).toFixed(1)} cm`;
+          document.getElementById("object-area").textContent = `${
+            data.area || 0
+          } px`;
+
+          // Update detection indicator
+          const detectionIndicator = document.getElementById(
+            "detection-indicator"
+          );
+          if (data.area > 0) {
+            detectionIndicator.classList.add("active");
+          } else {
+            detectionIndicator.classList.remove("active");
+          }
+        }
+
+        updateSerialMonitor(data) {
+          const monitor = document.getElementById("serial-monitor");
+
+          const serialData = `{${data.error_x || 0},${data.error_y || 0},${(
+            data.distance || 0
+          ).toFixed(1)},${data.area || 0},${this.controlMode},${
+            this.lastKeyPressed
+          },${this.pidParams.setpoint_jarak},${this.pidParams.kp_jarak},${
+            this.pidParams.ki_jarak
+          },${this.pidParams.kd_jarak},${this.pidParams.kp_arahhadap},${
+            this.pidParams.ki_arahhadap
+          },${this.pidParams.kd_arahhadap}}`;
+
+          const timestamp = new Date().toLocaleTimeString();
+          const line = `[${timestamp}] ${serialData}\n`;
+
+          monitor.textContent = line + monitor.textContent;
+
+          // Keep only last 10 lines
+          const lines = monitor.textContent.split("\n");
+          if (lines.length > 10) {
+            monitor.textContent = lines.slice(0, 10).join("\n");
+          }
+        }
+
+        async saveConfiguration() {
+          const saveBtn = document.getElementById("save-btn");
+          const originalHTML = saveBtn.innerHTML;
+
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Saving...';
+          saveBtn.disabled = true;
+
+          try {
+            const response = await fetch("/save_config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+              this.showToast("Configuration saved successfully!", "success");
+            } else {
+              this.showToast(
+                "Error saving configuration: " + result.message,
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error saving configuration:", error);
+            this.showToast("Error saving configuration", "error");
+          } finally {
+            setTimeout(() => {
+              saveBtn.innerHTML = originalHTML;
+              saveBtn.disabled = false;
+            }, 1000);
+          }
+        }
+
+        resetToDefault() {
+          if (
+            !confirm("Are you sure you want to reset all values to default?")
+          ) {
+            return;
+          }
+
+          // Stop system first
+          if (this.isRunning) {
+            this.stopSystem();
+          }
+
+          // Reset to defaults
+          this.controlMode = "manual";
+          this.pidParams = {
+            setpoint_jarak: 50.0,
+            kp_jarak: 1.0,
+            ki_jarak: 0.1,
+            kd_jarak: 0.05,
+            kp_arahhadap: 1.0,
+            ki_arahhadap: 0.1,
+            kd_arahhadap: 0.05,
+          };
+          this.lastKeyPressed = "none";
+
+          this.updateAllControls();
+          this.sendKeyToBackend("none");
+          this.showToast("All values reset to default", "info");
+        }
+
+        updateStatusIndicator(status, text) {
+          const indicator = document.getElementById("status-indicator");
+          const statusText = document.getElementById("status-text");
+
+          indicator.className = "status-dot";
+
+          switch (status) {
+            case "connected":
+              indicator.classList.add("connected");
+              break;
+            case "disconnected":
+              indicator.classList.add("disconnected");
+              break;
+            case "connecting":
+              break; // Default yellow
+          }
+
+          statusText.textContent = text;
+        }
+
+        showToast(message, type = "info") {
+          const container = document.getElementById("toast-container");
+
+          const icons = {
+            success: "fa-check-circle",
+            error: "fa-exclamation-circle",
+            warning: "fa-exclamation-triangle",
+            info: "fa-info-circle",
+          };
+
+          const toast = document.createElement("div");
+          toast.className = `toast ${type}`;
+          toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas ${icons[type]}"></i>
             </div>
-            <div class="flex items-center space-x-2">
-              <i class="fas fa-wifi text-green-400"></i>
-              <span>Port 5000</span>
+            <div class="toast-content">
+                <div class="toast-message">${message}</div>
             </div>
-          </div>
-        </div>
-      </div>
-    </footer>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+          `;
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+          container.appendChild(toast);
+
+          setTimeout(() => {
+            toast.classList.add("show");
+          }, 100);
+
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => {
+              if (toast.parentNode) {
+                toast.remove();
+              }
+            }, 300);
+          }, 4000);
+        }
+      }
+
+      // Global functions for HTML onclick events
+      let app;
+
+      function setControlMode(mode) {
+        app.controlMode = mode;
+        app.lastKeyPressed = "none"; // Reset key when switching modes
+        app.updateAllControls();
+        app.sendKeyToBackend("none");
+
+        fetch("/update_control_mode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: mode }),
+        });
+
+        app.showToast(`Switched to ${mode} mode`, "info");
+      }
+
+      function updatePIDParam(param, value) {
+        app.pidParams[param] = parseFloat(value);
+
+        if (param === "setpoint_jarak") {
+          document.getElementById("setpoint-value").textContent = value;
+        }
+
+        fetch("/update_pid_params", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [param]: parseFloat(value) }),
+        });
+      }
+
+      function updateCameraControl(param, value) {
+        const valueSpan = document.getElementById(param + "-value");
+        if (valueSpan) {
+          valueSpan.textContent = value;
+        }
+
+        fetch("/update_camera_controls", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [param]: parseInt(value) }),
+        });
+      }
+
+      function startSystem() {
+        app.startSystem();
+      }
+
+      function stopSystem() {
+        app.stopSystem();
+      }
+
+      function saveConfiguration() {
+        app.saveConfiguration();
+      }
+
+      function resetToDefault() {
+        app.resetToDefault();
+      }
+
+      // Initialize application when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM loaded, initializing Simplified Control App...");
+        app = new SimplifiedControlApp();
+
+        // Auto-start system after 1 second
+        setTimeout(() => {
+          app.startSystem();
+        }, 1000);
+
+        // Handle page unload
+        window.addEventListener("beforeunload", function (event) {
+          if (app.isRunning) {
+            event.preventDefault();
+            event.returnValue =
+              "System is still running. Are you sure you want to leave?";
+            return event.returnValue;
+          }
+        });
+
+        // Add focus indicator for keyboard controls
+        window.addEventListener("focus", () => {
+          if (app.controlMode === "manual" && app.isRunning) {
+            app.showToast("Keyboard controls active (WASD)", "info");
+          }
+        });
+      });
+    </script>
   </body>
 </html>

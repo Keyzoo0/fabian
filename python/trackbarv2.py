@@ -92,7 +92,7 @@ def set_trackbars_from_config(config):
         cv2.setTrackbarPos('Contrast', 'Trackbar', config.get('camera_controls', {}).get('contrast', 50))
 
 # Inisialisasi kamera
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 
 # Dapatkan resolusi kamera
 ret, test_frame = cap.read()

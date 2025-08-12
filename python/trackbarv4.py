@@ -11,24 +11,108 @@ from threading import Lock
 
 app = Flask(__name__)
 
-# Global variables - FIXED: Same default values as trackbarv2.py
+# Global variables - READ FROM TRACKBARV2 CONFIG
 cap = None
-hsv_values = {
-    'h_min': 0, 's_min': 0, 'v_min': 0,
-    'h_max': 179, 's_max': 255, 'v_max': 255  # SAME AS TRACKBARV2
+
+# Load HSV values from trackbarv2 config or use defaults
+def load_trackbarv2_config():
+    """Load configuration from trackbarv2.py color_detection_config.yaml"""
+    try:
+        with open('color_detection_config.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+            print("✅ Loaded trackbarv2 configuration from color_detection_config.yaml")
+            return config
+    except FileNotFoundError:
+        print("⚠️  trackbarv2 config file not found, using default HSV values")
+        return None
+    except Exception as e:
+        print(f"❌ Error loading trackbarv2 config: {e}")
+        return None
+
+# Initialize values from trackbarv2 config or defaults
+trackbarv2_config = load_trackbarv2_config()
+
+if trackbarv2_config and 'hsv' in trackbarv2_config:
+    # Use HSV values from trackbarv2
+    hsv_values = {
+        'h_min': trackbarv2_config['hsv']['h_min'],
+        's_min': trackbarv2_config['hsv']['s_min'], 
+        'v_min': trackbarv2_config['hsv']['v_min'],
+        'h_max': trackbarv2_config['hsv']['h_max'],
+        's_max': trackbarv2_config['hsv']['s_max'],
+        'v_max': trackbarv2_config['hsv']['v_max']
+    }
+    print(f"🎨 Using HSV values from trackbarv2: {hsv_values}")
+else:
+    # Default HSV values for green color detection if config not found
+    hsv_values = {
+        'h_min': 33, 's_min': 159, 'v_min': 89,
+        'h_max': 83, 's_max': 233, 'v_max': 190
+    }
+    print("🎨 Using default HSV values")
+
+# Load morphology values from trackbarv2 or use defaults
+if trackbarv2_config and 'morphology' in trackbarv2_config:
+    morphology_values = {
+        'erosion': trackbarv2_config['morphology']['erosion'],
+        'dilation': trackbarv2_config['morphology']['dilation'],
+        'opening': trackbarv2_config['morphology']['opening'],
+        'closing': trackbarv2_config['morphology']['closing']
+    }
+    print(f"🔧 Using morphology values from trackbarv2: {morphology_values}")
+else:
+    # Default morphology values
+    morphology_values = {
+        'erosion': 1, 'dilation': 3, 'opening': 2, 'closing': 1
+    }
+    print("🔧 Using default morphology values")
+
+# Load calibration values from trackbarv2 or use defaults
+if trackbarv2_config and 'calibration' in trackbarv2_config:
+    calibration_values = {
+        'calib_distance_cm': trackbarv2_config['calibration']['calib_distance_cm'],
+        'calib_pixel_area': trackbarv2_config['calibration']['calib_pixel_area'],
+        'min_area_threshold': trackbarv2_config['calibration']['min_area_threshold']
+    }
+    print(f"📏 Using calibration values from trackbarv2: {calibration_values}")
+else:
+    # Default calibration values
+    calibration_values = {
+        'calib_distance_cm': 50,
+        'calib_pixel_area': 5000,
+        'min_area_threshold': 500
+    }
+    print("📏 Using default calibration values")
+
+# Load camera controls from trackbarv2 or use defaults
+if trackbarv2_config and 'camera_controls' in trackbarv2_config:
+    camera_controls_from_trackbar = {
+        'auto_exposure': trackbarv2_config['camera_controls']['auto_exposure'],
+        'exposure': trackbarv2_config['camera_controls']['exposure'],
+        'auto_wb': trackbarv2_config['camera_controls']['auto_wb'],
+        'wb_temperature': trackbarv2_config['camera_controls']['wb_temperature'],
+        'brightness': trackbarv2_config['camera_controls']['brightness'],
+        'contrast': trackbarv2_config['camera_controls']['contrast']
+    }
+    print(f"📷 Using camera controls from trackbarv2: {camera_controls_from_trackbar}")
+else:
+    camera_controls_from_trackbar = {
+        'auto_exposure': 0, 'exposure': 50, 'auto_wb': 0,
+        'wb_temperature': 40, 'brightness': 50, 'contrast': 50
+    }
+    print("📷 Using default camera controls")
+
+# NEW: Control mode and PID parameters
+control_mode = 'manual'  # 'manual' or 'auto'
+# FIXED: Track last key pressed from web interface
+last_key_pressed = 'none'
+pid_params = {
+    'setpoint_jarak': 50.0,
+    'kp_jarak': 1.0, 'ki_jarak': 0.1, 'kd_jarak': 0.05,
+    'kp_arahhadap': 1.0, 'ki_arahhadap': 0.1, 'kd_arahhadap': 0.05
 }
-morphology_values = {
-    'erosion': 0, 'dilation': 0, 'opening': 0, 'closing': 0  # SAME AS TRACKBARV2
-}
-calibration_values = {
-    'calib_distance_cm': 50,
-    'calib_pixel_area': 5000,
-    'min_area_threshold': 500
-}
-camera_controls = {
-    'auto_exposure': 0, 'exposure': 50, 'auto_wb': 0,
-    'wb_temperature': 40, 'brightness': 50, 'contrast': 50
-}
+
+camera_controls = camera_controls_from_trackbar.copy()  # Use values from trackbarv2
 object_data = {
     'x': 0, 'y': 0, 'distance': 0,
     'error_x': 0, 'error_y': 0, 'area': 0
@@ -41,73 +125,86 @@ def initialize_serial():
     global serial_port
     try:
         serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-        print("Serial connection established on /dev/ttyUSB0")
+        print("✅ Serial connection established on /dev/ttyUSB0")
     except Exception as e:
-        print(f"Serial connection failed: {e}")
+        print(f"❌ Serial connection failed: {e}")
         serial_port = None
 
-def send_serial_data(error_x, error_y, distance):
-    global serial_port
+def send_serial_data():
+    global serial_port, object_data, control_mode, last_key_pressed, pid_params
     if serial_port and serial_port.is_open:
         try:
-            data = f"X:{error_x:+d},Y:{error_y:+d},D:{distance:.1f}\n"
+            # Use the last key pressed from web interface
+            tombol_ditekan = last_key_pressed
+            
+            # Create data string - EXACT FORMAT AS REQUESTED
+            data = f"{{{object_data['error_x']},{object_data['error_y']},{object_data['distance']},{object_data['area']},{control_mode},{tombol_ditekan},{pid_params['setpoint_jarak']},{pid_params['kp_jarak']},{pid_params['ki_jarak']},{pid_params['kd_jarak']},{pid_params['kp_arahhadap']},{pid_params['ki_arahhadap']},{pid_params['kd_arahhadap']}}}\n"
+            
             serial_port.write(data.encode())
+            print(f"📤 Serial TX: {data.strip()}")
+            
         except Exception as e:
-            print(f"Serial send error: {e}")
+            print(f"❌ Serial send error: {e}")
 
-# Load initial config
+# Load initial config (prioritize control_config.yaml, then trackbarv2 config)
 def load_config():
-    global hsv_values, morphology_values, calibration_values, camera_controls
+    global control_mode, pid_params, camera_controls
     try:
-        with open('color_detection_config.yaml', 'r') as file:
+        # Try to load control_config.yaml first (for PID and control mode)
+        with open('control_config.yaml', 'r') as file:
             config = yaml.safe_load(file)
-            # FIXED: Use get() with proper defaults that match trackbarv2
-            hsv_values = config.get('hsv', {
-                'h_min': 0, 's_min': 0, 'v_min': 0,
-                'h_max': 179, 's_max': 255, 'v_max': 255
-            })
-            morphology_values = config.get('morphology', {
-                'erosion': 0, 'dilation': 0, 'opening': 0, 'closing': 0
-            })
-            calibration_values = config.get('calibration', calibration_values)
-            camera_controls = config.get('camera_controls', camera_controls)
-            print(f"Config loaded - HSV values: {hsv_values}")
+            control_mode = config.get('control_mode', 'manual')
+            pid_params = config.get('pid_params', pid_params)
+            
+            # Use camera controls from control_config if available, otherwise use trackbarv2 values
+            if 'camera_controls' in config:
+                camera_controls.update(config['camera_controls'])
+            else:
+                # Keep camera_controls from trackbarv2
+                pass
+                
+            print(f"✅ Control config loaded - Mode: {control_mode}")
+            print(f"📷 Camera controls: {camera_controls}")
     except FileNotFoundError:
-        print("Config file not found, using default values")
-        print(f"Default HSV values: {hsv_values}")
+        print("⚠️  control_config.yaml not found, using trackbarv2 camera values and default control settings")
 
 def save_config():
     config = {
-        'hsv': hsv_values,
-        'morphology': morphology_values,
-        'calibration': calibration_values,
-        'camera_controls': camera_controls
+        'control_mode': control_mode,
+        'pid_params': pid_params,
+        'camera_controls': camera_controls,
+        # Also save the loaded HSV, morphology and calibration values for backup
+        'hsv_values': hsv_values,
+        'morphology_values': morphology_values,
+        'calibration_values': calibration_values
     }
     
-    with open('color_detection_config.yaml', 'w') as file:
+    with open('control_config.yaml', 'w') as file:
         yaml.dump(config, file, default_flow_style=False)
-    print(f"Config saved - HSV values: {hsv_values}")
+    print(f"✅ Config saved - Control mode: {control_mode}")
+    print(f"💾 Saved HSV values: {hsv_values}")
+    print(f"💾 Saved morphology values: {morphology_values}")
+    print(f"💾 Saved calibration values: {calibration_values}")
 
 def initialize_camera():
     global cap
     if cap is None:
-        print("Trying to initialize camera...")
-        camera_indices = [2, 0, 1, 3, 4, 5]  # Start with index 2, then try others
+        print("🎥 Trying to initialize camera...")
+        camera_indices = [0]
         
         for camera_index in camera_indices:
             try:
-                print(f"Attempting camera index {camera_index}")
+                print(f"   Attempting camera index {camera_index}")
                 
                 backends = [
-                    cv2.CAP_V4L2,    # Video4Linux2 (Linux)
-                    cv2.CAP_DSHOW,   # DirectShow (Windows)
-                    cv2.CAP_ANY      # Any available backend
+                    cv2.CAP_V4L2,
+                    cv2.CAP_DSHOW,
+                    cv2.CAP_ANY
                 ]
                 
                 for backend in backends:
                     try:
                         test_cap = cv2.VideoCapture(camera_index, backend)
-                        print(f"  Trying backend: {backend}")
                         
                         if test_cap.isOpened():
                             test_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -122,17 +219,13 @@ def initialize_camera():
                             
                             if ret and frame is not None and frame.size > 0:
                                 cap = test_cap
-                                print(f"✓ Successfully initialized camera on index {camera_index} with backend {backend}")
-                                print(f"  Frame shape: {frame.shape}")
+                                print(f"✅ Camera initialized on index {camera_index}")
                                 return True
                             else:
-                                print(f"  Camera opened but failed to read frame")
                                 test_cap.release()
                         else:
-                            print(f"  Failed to open camera with backend {backend}")
                             test_cap.release()
                     except Exception as e:
-                        print(f"  Error with backend {backend}: {e}")
                         try:
                             test_cap.release()
                         except:
@@ -140,7 +233,6 @@ def initialize_camera():
                         continue
                         
             except Exception as e:
-                print(f"Error with camera index {camera_index}: {e}")
                 continue
         
         print("❌ ERROR: No working camera found!")
@@ -153,35 +245,30 @@ def apply_camera_settings():
         return
     
     try:
-        # Auto Exposure
         if camera_controls['auto_exposure'] == 0:
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # Manual mode
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
             exposure_mapped = -13 + (camera_controls['exposure'] / 100.0) * 12
             cap.set(cv2.CAP_PROP_EXPOSURE, exposure_mapped)
         else:
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)  # Auto mode
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
         
-        # White Balance
         cap.set(cv2.CAP_PROP_AUTO_WB, camera_controls['auto_wb'])
-        if camera_controls['auto_wb'] == 0:  # Manual WB
+        if camera_controls['auto_wb'] == 0:
             wb_temp_mapped = 2000 + (camera_controls['wb_temperature'] / 80.0) * 6000
             cap.set(cv2.CAP_PROP_WB_TEMPERATURE, wb_temp_mapped)
         
-        # Brightness and Contrast
         cap.set(cv2.CAP_PROP_BRIGHTNESS, camera_controls['brightness'])
         cap.set(cv2.CAP_PROP_CONTRAST, camera_controls['contrast'])
         
     except Exception as e:
-        print(f"Error applying camera settings: {e}")
+        print(f"⚠️  Error applying camera settings: {e}")
 
 def process_frame():
-    global cap, hsv_values, morphology_values, calibration_values, object_data
+    global cap, hsv_values, morphology_values, calibration_values, object_data, control_mode
     
     with camera_lock:
         if cap is None or not cap.isOpened():
-            print("Camera not initialized, attempting to initialize...")
             if not initialize_camera():
-                print("Failed to initialize camera")
                 return None, None, None, None, None
             apply_camera_settings()
         
@@ -192,26 +279,20 @@ def process_frame():
                     if frame.shape[0] > 0 and frame.shape[1] > 0:
                         break
                 
-                print(f"Frame read attempt {attempt + 1} failed - ret: {ret}, frame valid: {frame is not None}")
-                
                 if attempt >= 2:
-                    print("Multiple frame read failures, attempting camera reinitialization...")
                     if cap:
                         cap.release()
                     cap = None
                     if not initialize_camera():
-                        print("Camera reinitialization failed")
                         return None, None, None, None, None
                     apply_camera_settings()
                 
                 time.sleep(0.1)
                 
             except Exception as e:
-                print(f"Exception during frame read attempt {attempt + 1}: {e}")
                 time.sleep(0.1)
         
         if not ret or frame is None or frame.size == 0:
-            print("ERROR: Failed to read valid frame from camera after all attempts")
             if cap:
                 cap.release()
             cap = None
@@ -224,18 +305,14 @@ def process_frame():
         # Convert BGR to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         
-        # FIXED: Create HSV range - EXACTLY SAME AS TRACKBARV2
-        # Debug print untuk troubleshooting
-        if hsv_values['h_min'] == 0 and hsv_values['h_max'] == 179 and hsv_values['s_min'] == 0 and hsv_values['s_max'] == 255 and hsv_values['v_min'] == 0 and hsv_values['v_max'] == 255:
-            print("HSV range is FULL (should show all white mask for calibration)")
-        
+        # Create HSV range (FIXED VALUES)
         lower = np.array([hsv_values['h_min'], hsv_values['s_min'], hsv_values['v_min']])
         upper = np.array([hsv_values['h_max'], hsv_values['s_max'], hsv_values['v_max']])
         
-        # Create mask - EXACTLY SAME AS TRACKBARV2
+        # Create mask
         mask = cv2.inRange(hsv, lower, upper)
         
-        # Apply morphology operations - EXACTLY SAME AS TRACKBARV2
+        # Apply fixed morphology operations
         if morphology_values['erosion'] > 0:
             kernel_erosion = np.ones((morphology_values['erosion'], morphology_values['erosion']), np.uint8)
             mask = cv2.erode(mask, kernel_erosion, iterations=1)
@@ -261,7 +338,7 @@ def process_frame():
         # Create frame with bounding box and tracking info
         frame_with_box = frame.copy()
         
-        # Add center crosshair (yellow) - EXACT SAME AS TRACKBARV2
+        # Add center crosshair (yellow)
         cv2.line(frame_with_box, (0, frame_center_y), (frame_width, frame_center_y), (0, 255, 255), 1)
         cv2.line(frame_with_box, (frame_center_x, 0), (frame_center_x, frame_height), (0, 255, 255), 1)
         cv2.circle(frame_with_box, (frame_center_x, frame_center_y), 3, (0, 255, 255), -1)
@@ -278,14 +355,13 @@ def process_frame():
             if area > calibration_values['min_area_threshold']:
                 x, y, w, h = cv2.boundingRect(largest_contour)
                 
-                # Calculate distance based on calibration - EXACTLY SAME AS TRACKBARV2
+                # Calculate distance based on calibration
                 current_pixel_area = area
                 
-                # This is the EXACT SAME formula as trackbarv2.py
                 if calibration_values['calib_pixel_area'] > 0 and calibration_values['calib_distance_cm'] > 0:
                     estimated_distance = calibration_values['calib_distance_cm'] * (calibration_values['calib_pixel_area'] / current_pixel_area) ** 0.5
                 else:
-                    estimated_distance = 0  # Belum dikalibrasi
+                    estimated_distance = 0
                 
                 # Draw bounding box (green)
                 cv2.rectangle(frame_with_box, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -293,26 +369,34 @@ def process_frame():
                 # Object center
                 center_x, center_y = x + w//2, y + h//2
                 
-                # Calculate error from frame center - EXACT SAME AS TRACKBARV2
-                error_x = center_x - frame_center_x  # Positif = kanan, Negatif = kiri
-                error_y = center_y - frame_center_y  # Positif = bawah, Negatif = atas
+                # Calculate error from frame center
+                error_x = center_x - frame_center_x
+                error_y = center_y - frame_center_y
                 
-                # Draw object center crosshair (red) - EXACT SAME AS TRACKBARV2
+                # Draw object center crosshair (red)
                 cv2.circle(frame_with_box, (center_x, center_y), 5, (0, 0, 255), -1)
                 cv2.line(frame_with_box, (center_x-10, center_y), (center_x+10, center_y), (0, 0, 255), 2)
                 cv2.line(frame_with_box, (center_x, center_y-10), (center_x, center_y+10), (0, 0, 255), 2)
                 
-                # Draw line from center to object (cyan) - EXACT SAME AS TRACKBARV2
+                # Draw line from center to object (cyan)
                 cv2.line(frame_with_box, (frame_center_x, frame_center_y), (center_x, center_y), (255, 255, 0), 2)
-                  
+                
+                # Add text information
+                cv2.putText(frame_with_box, f'Area: {int(area)} px', (x, y - 30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.putText(frame_with_box, f'Distance: {estimated_distance:.1f} cm', (x, y - 10), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                cv2.putText(frame_with_box, f'Error X: {error_x:+d} px', (x, y - 50), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+                cv2.putText(frame_with_box, f'Error Y: {error_y:+d} px', (x, y - 70), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+                
                 # Update global object data
                 object_data.update({
                     'x': center_x, 'y': center_y, 'distance': estimated_distance,
                     'error_x': error_x, 'error_y': error_y, 'area': int(area)
                 })
                 
-                # Send data via serial
-                send_serial_data(error_x, error_y, estimated_distance)
             else:
                 # Reset object data if no valid object found
                 object_data.update({
@@ -326,6 +410,9 @@ def process_frame():
                 'error_x': 0, 'error_y': 0, 'area': 0
             })
         
+        # Send serial data
+        send_serial_data()
+        
         return frame, hsv, mask_3ch, result, frame_with_box
 
 def frame_to_base64(frame):
@@ -333,7 +420,7 @@ def frame_to_base64(frame):
         return None
     
     try:
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]  # 85% quality
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
         _, buffer = cv2.imencode('.jpg', frame, encode_param)
         frame_base64 = base64.b64encode(buffer).decode('utf-8')
         return f"data:image/jpeg;base64,{frame_base64}"
@@ -360,46 +447,44 @@ def get_frames():
             'result': frame_to_base64(result)
         }
         
-        for frame_type, frame_data in frames.items():
-            if frame_data is None:
-                print(f"Failed to encode {frame_type} frame")
-                frames[frame_type] = ""
-        
         return jsonify(frames)
     
     except Exception as e:
         print(f"Error in get_frames: {e}")
         return jsonify({'error': f'Frame processing error: {str(e)}'})
 
-@app.route('/update_hsv', methods=['POST'])
-def update_hsv():
-    global hsv_values
+@app.route('/update_control_mode', methods=['POST'])
+def update_control_mode():
+    global control_mode, last_key_pressed
     try:
         data = request.get_json()
-        print(f"Received HSV update: {data}")
-        hsv_values.update(data)
-        print(f"Updated HSV values: {hsv_values}")
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        print(f"Error updating HSV: {e}")
-        return jsonify({'status': 'error', 'message': str(e)})
-
-@app.route('/update_morphology', methods=['POST'])
-def update_morphology():
-    global morphology_values
-    try:
-        data = request.get_json()
-        morphology_values.update(data)
+        control_mode = data['mode']
+        # Reset last key when switching modes
+        last_key_pressed = 'none'
+        print(f"🔄 Control mode changed to: {control_mode}")
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/update_calibration', methods=['POST'])
-def update_calibration():
-    global calibration_values
+# NEW: Route to update last key pressed from web interface
+@app.route('/update_last_key', methods=['POST'])
+def update_last_key():
+    global last_key_pressed
     try:
         data = request.get_json()
-        calibration_values.update(data)
+        last_key_pressed = data['key']
+        print(f"⌨️  Last key updated from web: {last_key_pressed}")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/update_pid_params', methods=['POST'])
+def update_pid_params():
+    global pid_params
+    try:
+        data = request.get_json()
+        pid_params.update(data)
+        print(f"⚙️  PID parameters updated: {pid_params}")
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
@@ -419,17 +504,17 @@ def update_camera_controls():
 def get_all_values():
     try:
         return jsonify({
-            'hsv': hsv_values,
-            'morphology': morphology_values,
-            'calibration': calibration_values,
+            'control_mode': control_mode,
+            'pid_params': pid_params,
+            'last_key_pressed': last_key_pressed,
             'camera_controls': camera_controls,
             'object_data': object_data
         })
     except Exception as e:
         return jsonify({'error': str(e)})
 
-@app.route('/save_calibration', methods=['POST'])
-def save_calibration():
+@app.route('/save_config', methods=['POST'])
+def save_config_route():
     try:
         save_config()
         return jsonify({'status': 'success', 'message': 'Configuration saved successfully'})
@@ -457,76 +542,21 @@ def after_request(response):
     response.headers.add('Expires', '0')
     return response
 
-@app.route('/test_camera')
-def test_camera():
-    """Test endpoint to check if camera is working"""
-    try:
-        if cap is None:
-            return jsonify({'status': 'error', 'message': 'Camera not initialized'})
-        
-        if not cap.isOpened():
-            return jsonify({'status': 'error', 'message': 'Camera not opened'})
-        
-        ret, frame = cap.read()
-        if not ret or frame is None:
-            return jsonify({'status': 'error', 'message': 'Failed to read frame'})
-        
-        return jsonify({
-            'status': 'success', 
-            'message': 'Camera is working',
-            'frame_shape': frame.shape,
-            'camera_index': 2,
-            'properties': {
-                'width': cap.get(cv2.CAP_PROP_FRAME_WIDTH),
-                'height': cap.get(cv2.CAP_PROP_FRAME_HEIGHT),
-                'fps': cap.get(cv2.CAP_PROP_FPS)
-            }
-        })
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
-
-@app.route('/test_frame')
-def test_frame():
-    """Get a single test frame to verify image transmission"""
-    try:
-        if cap is None or not cap.isOpened():
-            return jsonify({'error': 'Camera not available'})
-        
-        ret, frame = cap.read()
-        if not ret or frame is None:
-            return jsonify({'error': 'Failed to read frame'})
-        
-        frame_b64 = frame_to_base64(frame)
-        if frame_b64 is None:
-            return jsonify({'error': 'Failed to encode frame'})
-        
-        return jsonify({
-            'status': 'success',
-            'frame': frame_b64,
-            'shape': frame.shape
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)})
-
 if __name__ == '__main__':
     if os.environ.get('WERKZEUG_RUN_MAIN') or not app.debug:
         load_config()
         initialize_serial()
-        print("Starting Color Detection Calibration System...")
-        print("Attempting to initialize camera on startup (prioritizing index 2)...")
-        print(f"Initial HSV values: {hsv_values}")
+        print("🚀 Starting Object Tracking Control System with TrackbarV2 Integration...")
+        print(f"🎨 HSV Detection Values: H({hsv_values['h_min']}-{hsv_values['h_max']}) S({hsv_values['s_min']}-{hsv_values['s_max']}) V({hsv_values['v_min']}-{hsv_values['v_max']})")
+        print(f"🔧 Morphology: erosion={morphology_values['erosion']}, dilation={morphology_values['dilation']}, opening={morphology_values['opening']}, closing={morphology_values['closing']}")
+        print(f"📏 Calibration: {calibration_values['calib_distance_cm']}cm = {calibration_values['calib_pixel_area']}px, min_area={calibration_values['min_area_threshold']}")
+        print(f"🎮 Control mode: {control_mode}")
+        print(f"⚙️  PID parameters: {pid_params}")
         
         if initialize_camera():
-            print("✓ Camera initialized successfully!")
-            if cap:
-                width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-                height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                fps = cap.get(cv2.CAP_PROP_FPS)
-                print(f"Camera resolution: {int(width)}x{int(height)} @ {fps} FPS")
+            print("✅ Camera initialized successfully!")
         else:
-            print("⚠ Warning: Camera initialization failed, will retry when needed.")
+            print("⚠️  Warning: Camera initialization failed, will retry when needed.")
     
-    print("Flask server starting on http://0.0.0.0:5000")
-    print("Access the application at: http://localhost:5000")
-    
+    print("🌐 Flask server starting on http://0.0.0.0:5000")
     app.run(debug=False, host='0.0.0.0', port=5000, threaded=True)
