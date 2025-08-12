@@ -58,7 +58,7 @@ int lambda = 5; // Awal nilai lambda
 // === PID VARIABLES ===
 // PID Arah Hadap (error_x -> z) with tolerance
 float pid_arah_setpoint = 0.0;  // Target center
-float pid_arah_tolerance = 10.0;  // ±10 pixels tolerance zone
+float pid_arah_tolerance = 20.0;  // ±10 pixels tolerance zone
 float pid_arah_input = 0.0;
 float pid_arah_output = 0.0;
 float pid_arah_error = 0.0;
@@ -69,7 +69,7 @@ unsigned long pid_arah_last_time = 0;
 
 // PID Jarak (distance -> y) with tolerance
 float pid_jarak_setpoint = 50.0;  // Default 50cm
-float pid_jarak_tolerance = 3.0;  // ±3cm tolerance zone
+float pid_jarak_tolerance = 10.0;  // ±3cm tolerance zone
 float pid_jarak_input = 0.0;
 float pid_jarak_output = 0.0;
 float pid_jarak_error = 0.0;
@@ -273,8 +273,8 @@ void processAutoMode() {
     }
     
     // Set output ke y dan z
-    y = (int)pid_jarak_output;   // Output PID jarak -> y (-100 to 100)
-    z = (int)pid_arah_output;    // Output PID arah -> z (-120 to 120)
+    y = (int)pid_jarak_output*-1;   // Output PID jarak -> y (-100 to 100)
+    z = (int)pid_arah_output*-1;    // Output PID arah -> z (-120 to 120)
     
     Serial.println("🤖 PID Arah - Error: " + String(pid_arah_error, 1) + 
                    " | In Tolerance: " + String(arah_in_tolerance ? "YES" : "NO") +
