@@ -1,19 +1,22 @@
 /*
- * Arduino PID Control System with Tolerance
+ * Arduino PID Control System with Half Resolution Constraint
  * Menerima data serial dari Python dan mengkonversi ke nilai y,z dengan PID
+ * 
+ * MODIFIKASI: PID output dibatasi setengah resolusi (500 untuk 10-bit)
+ * sehingga y + z tidak melebihi batas maksimum PWM (1024)
  * 
  * Data format dari Python: {error_x,error_y,distance,area,mode,tombol_ditekan,setpoint_jarak,kp_jarak,ki_jarak,kd_jarak,kp_arahhadap,ki_arahhadap,kd_arahhadap}
  * 
  * Mode Manual:
- * w -> y = 100, z = 0   (maju)
- * s -> y = -100, z = 0  (mundur)
- * a -> y = 0, z = -100  (kiri)
- * d -> y = 0, z = 100   (kanan)
+ * w -> y = 600, z = 0   (maju, range tinggi)
+ * s -> y = -600, z = 0  (mundur, range tinggi)
+ * a -> y = 0, z = -100  (kiri, range kecil)
+ * d -> y = 0, z = 100   (kanan, range kecil)
  * none -> y = 0, z = 0  (stop)
  * 
- * Mode Auto with Tolerance:
- * PID Arah Hadap: setpoint = -10 to 10 px (tolerance zone), input = error_x, output = z (-120 to 120)
- * PID Jarak: setpoint ± 3 cm (tolerance zone), input = distance, output = y (-100 to 100)
+ * Mode Auto with Different Resolution:
+ * PID Arah Hadap: setpoint = -10 to 10 px (tolerance zone), input = error_x, output = z (-100 to 100)
+ * PID Jarak: setpoint ± 3 cm (tolerance zone), input = distance, output = y (-600 to 600)
  */
 
 #define pinM1A 16
@@ -31,6 +34,12 @@
 
 #define FREQUENCY 20000
 #define RESOLUTION 10
+
+// Konstanta untuk setengah resolusi
+#define MAX_PWM_VALUE (1 << RESOLUTION)  // 2^10 = 1024 untuk 10-bit
+#define HALF_RESOLUTION (MAX_PWM_VALUE / 2)  // 512 untuk safety, tapi kita pakai 500
+#define MAX_PID_OUTPUT_Y 600  // Maksimal output PID untuk Y (maju/mundur) - dinaikkan ke 600
+#define MAX_PID_OUTPUT_Z 100  // Maksimal output PID untuk Z (kiri/kanan) - dikurangi ke 100
 
 #define d2r(x) x*(PI / 180)
 #define LengthAlpha 0.15  //diameter roda
@@ -51,14 +60,14 @@ float ki_arahhadap = 0.0;
 float kd_arahhadap = 0.0;
 
 // Variabel untuk kontrol motor
-int y = 0, z = 0; // Nilai y,z untuk kinematik
+int y = 0, z = 0; // Nilai y,z untuk kinematik (dibatasi ±250)
 int lx, ly, teta, rx, ry, atanVal, m1, m2;
-int lambda = 5; // Awal nilai lambda
+int lambda = 1; // Dikurangi lagi karena Y range nya besar (600)
 
 // === PID VARIABLES ===
-// PID Arah Hadap (error_x -> z) with tolerance
+// PID Arah Hadap (error_x -> z) with half resolution
 float pid_arah_setpoint = 0.0;  // Target center
-float pid_arah_tolerance = 20.0;  // ±10 pixels tolerance zone
+float pid_arah_tolerance = 20.0;  // ±20 pixels tolerance zone
 float pid_arah_input = 0.0;
 float pid_arah_output = 0.0;
 float pid_arah_error = 0.0;
@@ -67,9 +76,9 @@ float pid_arah_integral = 0.0;
 float pid_arah_derivative = 0.0;
 unsigned long pid_arah_last_time = 0;
 
-// PID Jarak (distance -> y) with tolerance
+// PID Jarak (distance -> y) with half resolution
 float pid_jarak_setpoint = 50.0;  // Default 50cm
-float pid_jarak_tolerance = 10.0;  // ±3cm tolerance zone
+float pid_jarak_tolerance = 10.0;  // ±10cm tolerance zone
 float pid_jarak_input = 0.0;
 float pid_jarak_output = 0.0;
 float pid_jarak_error = 0.0;
@@ -91,18 +100,22 @@ void setup() {
   
   Serial.println("=================================");
   Serial.println("Arduino PID Control System");
+  Serial.println("Asymmetric Range Mode (Y:600, Z:100)");
   Serial.println("=================================");
+  Serial.println("PWM Resolution: " + String(RESOLUTION) + " bit (" + String(MAX_PWM_VALUE) + " max)");
+  Serial.println("Y Max Output: ±" + String(MAX_PID_OUTPUT_Y) + " | Z Max Output: ±" + String(MAX_PID_OUTPUT_Z));
+  Serial.println("Lambda factor: " + String(lambda));
   Serial.println("Ready to receive data from Python...");
   Serial.println("Manual controls:");
-  Serial.println("W -> y=100, z=0   (Forward)");
-  Serial.println("S -> y=-100, z=0  (Backward)");
-  Serial.println("A -> y=0, z=-100  (Left)");
-  Serial.println("D -> y=0, z=100   (Right)");
+  Serial.println("W -> y=600, z=0   (Forward - High Speed)");
+  Serial.println("S -> y=-600, z=0  (Backward - High Speed)");
+  Serial.println("A -> y=0, z=-100  (Left - Gentle Turn)");
+  Serial.println("D -> y=0, z=100   (Right - Gentle Turn)");
   Serial.println("none -> y=0, z=0  (Stop)");
   Serial.println();
   Serial.println("Auto controls:");
-  Serial.println("PID Arah: error_x ±10px tolerance -> z (-120 to 120)");
-  Serial.println("PID Jarak: setpoint ±3cm tolerance -> y (-100 to 100)");
+  Serial.println("PID Arah: error_x ±20px tolerance -> z (-100 to 100)");
+  Serial.println("PID Jarak: setpoint ±10cm tolerance -> y (-600 to 600)");
   Serial.println();
 }
 
@@ -202,26 +215,26 @@ void processManualMode() {
   y = 0;
   z = 0;
   
-  // Konversi tombol ke nilai y,z
+  // Konversi tombol ke nilai y,z (Y: ±600, Z: ±100)
   if (tombol_ditekan == "w") {
-    y = 100;  // Maju
+    y = MAX_PID_OUTPUT_Y;  // Maju (600)
     z = 0;
-    Serial.println("⬆️  FORWARD - y=100, z=0");
+    Serial.println("⬆️  FORWARD - y=" + String(y) + ", z=0 (High Speed)");
   }
   else if (tombol_ditekan == "s") {
-    y = -100; // Mundur
+    y = -MAX_PID_OUTPUT_Y; // Mundur (-600)
     z = 0;
-    Serial.println("⬇️  BACKWARD - y=-100, z=0");
+    Serial.println("⬇️  BACKWARD - y=" + String(y) + ", z=0 (High Speed)");
   }
   else if (tombol_ditekan == "a") {
     y = 0;
-    z = -100; // Kiri
-    Serial.println("⬅️  LEFT - y=0, z=-100");
+    z = -MAX_PID_OUTPUT_Z; // Kiri (-100)
+    Serial.println("⬅️  LEFT - y=0, z=" + String(z) + " (Gentle Turn)");
   }
   else if (tombol_ditekan == "d") {
     y = 0;
-    z = 100;  // Kanan
-    Serial.println("➡️  RIGHT - y=0, z=100");
+    z = MAX_PID_OUTPUT_Z;  // Kanan (100)
+    Serial.println("➡️  RIGHT - y=0, z=" + String(z) + " (Gentle Turn)");
   }
   else if (tombol_ditekan == "none") {
     y = 0;
@@ -261,7 +274,7 @@ void processAutoMode() {
     } else {
       pid_arah_output = 0.0;  // Stop arah correction jika dalam tolerance
       resetPID_Arah_Integral();  // Reset integral untuk mencegah windup
-      Serial.println("✅ Arah dalam tolerance zone (-10 to 10 px)");
+      Serial.println("✅ Arah dalam tolerance zone (±20 px)");
     }
     
     if (!jarak_in_tolerance) {
@@ -269,12 +282,12 @@ void processAutoMode() {
     } else {
       pid_jarak_output = 0.0;  // Stop jarak correction jika dalam tolerance
       resetPID_Jarak_Integral();  // Reset integral untuk mencegah windup
-      Serial.println("✅ Jarak dalam tolerance zone (±3 cm)");
+      Serial.println("✅ Jarak dalam tolerance zone (±10 cm)");
     }
     
-    // Set output ke y dan z
-    y = (int)pid_jarak_output*-1;   // Output PID jarak -> y (-100 to 100)
-    z = (int)pid_arah_output*-1;    // Output PID arah -> z (-120 to 120)
+    // Set output ke y dan z dengan pembatasan berbeda
+    y = constrainY((int)(pid_jarak_output * -1));   // Output PID jarak -> y (±250)
+    z = constrainZ((int)(pid_arah_output * -1));    // Output PID arah -> z (±200)
     
     Serial.println("🤖 PID Arah - Error: " + String(pid_arah_error, 1) + 
                    " | In Tolerance: " + String(arah_in_tolerance ? "YES" : "NO") +
@@ -282,6 +295,11 @@ void processAutoMode() {
     Serial.println("🤖 PID Jarak - Error: " + String(pid_jarak_error, 1) + 
                    " | In Tolerance: " + String(jarak_in_tolerance ? "YES" : "NO") +
                    " | Output Y: " + String(y));
+                   
+    // Tampilkan total kombinasi untuk monitoring
+    int total_magnitude = abs(y) + abs(z);
+    int max_possible = MAX_PID_OUTPUT_Y + MAX_PID_OUTPUT_Z;  // 600 + 100 = 700
+    Serial.println("📊 Total magnitude: " + String(total_magnitude) + " / " + String(max_possible) + " (max safe: " + String(MAX_PWM_VALUE) + ")");
   }
   else {
     Serial.println("❌ No object detected - STOP");
@@ -289,6 +307,20 @@ void processAutoMode() {
     z = 0;
     resetPID();  // Reset PID saat tidak ada object
   }
+}
+
+// Fungsi untuk membatasi nilai Y (±600)
+int constrainY(int value) {
+  if (value > MAX_PID_OUTPUT_Y) return MAX_PID_OUTPUT_Y;
+  else if (value < -MAX_PID_OUTPUT_Y) return -MAX_PID_OUTPUT_Y;
+  else return value;
+}
+
+// Fungsi untuk membatasi nilai Z (±100)
+int constrainZ(int value) {
+  if (value > MAX_PID_OUTPUT_Z) return MAX_PID_OUTPUT_Z;
+  else if (value < -MAX_PID_OUTPUT_Z) return -MAX_PID_OUTPUT_Z;
+  else return value;
 }
 
 void computePID_Arah() {
@@ -315,9 +347,9 @@ void computePID_Arah() {
                       (ki_arahhadap * pid_arah_integral) + 
                       (kd_arahhadap * pid_arah_derivative);
     
-    // Batasi output (-120 to 120)
-    if (pid_arah_output > 120.0) pid_arah_output = 120.0;
-    else if (pid_arah_output < -120.0) pid_arah_output = -120.0;
+    // Batasi output ke Z maksimal ±100
+    if (pid_arah_output > MAX_PID_OUTPUT_Z) pid_arah_output = MAX_PID_OUTPUT_Z;
+    else if (pid_arah_output < -MAX_PID_OUTPUT_Z) pid_arah_output = -MAX_PID_OUTPUT_Z;
     
     // Simpan untuk iterasi berikutnya
     pid_arah_last_error = pid_arah_error;
@@ -354,9 +386,9 @@ void computePID_Jarak() {
                        (ki_jarak * pid_jarak_integral) + 
                        (kd_jarak * pid_jarak_derivative);
     
-    // Batasi output (-100 to 100)
-    if (pid_jarak_output > 100.0) pid_jarak_output = 100.0;
-    else if (pid_jarak_output < -100.0) pid_jarak_output = -100.0;
+    // Batasi output ke Y maksimal ±600
+    if (pid_jarak_output > MAX_PID_OUTPUT_Y) pid_jarak_output = MAX_PID_OUTPUT_Y;
+    else if (pid_jarak_output < -MAX_PID_OUTPUT_Y) pid_jarak_output = -MAX_PID_OUTPUT_Y;
     
     // Simpan untuk iterasi berikutnya
     pid_jarak_last_error = pid_jarak_error;
@@ -371,13 +403,13 @@ void computePID_Jarak() {
 
 // === TOLERANCE CHECK FUNCTIONS ===
 bool checkArahTolerance() {
-  // Cek apakah error_x dalam range -10 sampai +10 pixels
+  // Cek apakah error_x dalam range -20 sampai +20 pixels
   float abs_error = abs(error_x);
   return (abs_error <= pid_arah_tolerance);
 }
 
 bool checkJarakTolerance() {
-  // Cek apakah distance dalam range setpoint ± 3cm
+  // Cek apakah distance dalam range setpoint ± 10cm
   float distance_error = abs(pid_jarak_setpoint - distance);
   return (distance_error <= pid_jarak_tolerance);
 }
@@ -413,16 +445,20 @@ void resetPID() {
 
 void executeMovement() {
   Serial.println("🔧 Executing movement - y=" + String(y) + ", z=" + String(z));
-  atanVal = atan2(z, 0);
-  atanVal = (atanVal * 180 / PI);
-  teta = ((atanVal * -1) * 400);
-  kinematik(y, 0 , -teta);
+ 
+  kinematik(y, 0 , -z);
   
   // Set PWM motor
   set_pwm(M1, m1);
   set_pwm(M2, m2);
   
   Serial.println("⚙️  Motor M1: " + String(m1) + " | Motor M2: " + String(m2));
+  
+  // Verifikasi bahwa nilai PWM tidak melebihi batas
+  if (abs(m1) > MAX_PWM_VALUE || abs(m2) > MAX_PWM_VALUE) {
+    Serial.println("⚠️  WARNING: PWM value exceeds maximum!");
+    Serial.println("⚠️  M1: " + String(m1) + " | M2: " + String(m2) + " | Max: " + String(MAX_PWM_VALUE));
+  }
 }
 
 void stopMotors() {
@@ -455,15 +491,15 @@ void setupMotor() {
 }
 
 void kinematik(int x, int y, int th) {
-  m1 = lambda * (cos(d2r(180)) * x + sin(d2r(180)) * y + -LengthAlpha * d2r(th));
-  m2 = lambda * (cos(d2r(0)) * x + sin(d2r(0)) * y + -LengthAlpha * d2r(th));
+  m1 = lambda * (cos(d2r(180)) * x + sin(d2r(180)) * y + th);
+  m2 = lambda * (cos(d2r(0)) * x + sin(d2r(0)) * y + th);
 
-  // Batasi nilai PWM
-  if (m1 > 1022) m1 = 1022;
-  else if (m1 < -1022) m1 = -1022;
+  // Batasi nilai PWM ke maksimum resolusi
+  if (m1 > (MAX_PWM_VALUE-1)) m1 = (MAX_PWM_VALUE-1);  // 1023 untuk 10-bit
+  else if (m1 < -(MAX_PWM_VALUE-1)) m1 = -(MAX_PWM_VALUE-1);
 
-  if (m2 > 1022) m2 = 1022;
-  else if (m2 < -1022) m2 = -1022;
+  if (m2 > (MAX_PWM_VALUE-1)) m2 = (MAX_PWM_VALUE-1);  // 1023 untuk 10-bit
+  else if (m2 < -(MAX_PWM_VALUE-1)) m2 = -(MAX_PWM_VALUE-1);
 }
 
 void set_pwm(byte MTR, int val_pwm) {

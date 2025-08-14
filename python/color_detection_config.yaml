@@ -10,14 +10,14 @@ camera_controls:
   exposure: 0
   wb_temperature: 0
 hsv:
-  h_max: 54
-  h_min: 28
-  s_max: 252
-  s_min: 145
+  h_max: 88
+  h_min: 24
+  s_max: 255
+  s_min: 181
   v_max: 255
-  v_min: 147
+  v_min: 86
 morphology:
   closing: 0
-  dilation: 5
-  erosion: 0
+  dilation: 2
+  erosion: 2
   opening: 0
