@@ -3,42 +3,6 @@ import numpy as np
 import yaml
 import os
 
-# Set X11 forwarding optimization
-os.environ['QT_X11_NO_MITSHM'] = '1'
-os.environ['DISPLAY'] = ':0'  # Fallback display
-
-# Check if running via SSH and setup display
-def setup_display():
-    """Setup display for SSH X11 forwarding"""
-    display = os.environ.get('DISPLAY')
-    
-    if not display:
-        print("No DISPLAY environment variable found.")
-        print("Solutions:")
-        print("1. Reconnect SSH with: ssh -X username@hostname")
-        print("2. Or set display manually: export DISPLAY=:0")
-        return False
-    
-    print(f"DISPLAY: {display}")
-    return True
-
-# Test X11 connection
-def test_x11():
-    """Test if X11 forwarding is working"""
-    try:
-        # Try to create a simple window to test X11
-        import subprocess
-        result = subprocess.run(['xset', 'q'], capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            print("X11 forwarding is working")
-            return True
-        else:
-            print("X11 forwarding test failed")
-            return False
-    except Exception as e:
-        print(f"X11 test error: {e}")
-        return False
-
 # Fungsi callback untuk trackbar (tidak perlu implementasi)
 def nothing(x):
     pass
@@ -127,25 +91,8 @@ def set_trackbars_from_config(config):
         cv2.setTrackbarPos('Brightness', 'Trackbar', config.get('camera_controls', {}).get('brightness', 50))
         cv2.setTrackbarPos('Contrast', 'Trackbar', config.get('camera_controls', {}).get('contrast', 50))
 
-# Check display dan X11 sebelum memulai
-if not setup_display():
-    print("Exiting due to display setup failure")
-    exit(1)
-
-if not test_x11():
-    print("X11 forwarding not working properly")
-    print("Try these solutions:")
-    print("1. ssh -Y username@hostname  (trusted X11 forwarding)")
-    print("2. Install xauth: sudo apt install xauth")
-    print("3. Check SSH config: X11Forwarding yes")
-    exit(1)
-
 # Inisialisasi kamera
 cap = cv2.VideoCapture(0)
-
-# Optimasi kamera untuk low latency
-cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer size
-cap.set(cv2.CAP_PROP_FPS, 30)        # Set FPS
 
 # Dapatkan resolusi kamera
 ret, test_frame = cap.read()
@@ -159,9 +106,9 @@ else:
     max_pixel_area = (frame_width * frame_height) // 2
     print("Using default resolution: 640x480")
 
-# Buat window untuk trackbar dengan optimasi
-cv2.namedWindow('Trackbar', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.resizeWindow('Trackbar', 400, 600)
+# Buat window untuk trackbar
+cv2.namedWindow('Trackbar')
+cv2.resizeWindow('Trackbar', 400, 600)  # Lebih tinggi untuk camera controls
 
 # Buat trackbar untuk HSV
 cv2.createTrackbar('H Min', 'Trackbar', 0, 179, nothing)
@@ -193,18 +140,6 @@ cv2.createTrackbar('Contrast', 'Trackbar', 50, 100, nothing)           # 0-100
 # Load konfigurasi yang tersimpan
 config = load_config()
 set_trackbars_from_config(config)
-
-# Buat window untuk display dengan optimasi low latency
-cv2.namedWindow('Color Detection', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-
-# Resize frame untuk mengurangi latency (optional)
-SCALE_FACTOR = 0.75  # Reduce to 75% for faster transmission
-display_width = int(frame_width * 2 * SCALE_FACTOR)  # 2x karena hstack
-display_height = int(frame_height * 2 * SCALE_FACTOR)  # 2x karena vstack
-
-print("SSH X11 Forwarding Mode")
-print("Connect with: ssh -X username@hostname")
-print("Press 'S' to Save Config | Press 'Q' to Quit")
 
 while True:
     ret, frame = cap.read()
@@ -363,34 +298,24 @@ while True:
     bottom_row = np.hstack((mask_3ch, result))
     combined = np.vstack((top_row, bottom_row))
     
-    # Resize untuk mengurangi latency transmisi via SSH
-    combined_resized = cv2.resize(combined, (display_width, display_height), interpolation=cv2.INTER_LINEAR)
-    
-    # Tambahkan label text pada setiap frame (adjust untuk resize)
-    font_scale = SCALE_FACTOR * 0.8
-    thickness = max(1, int(SCALE_FACTOR * 2))
-    
-    cv2.putText(combined_resized, 'Original + BBox', (10, int(25*SCALE_FACTOR)), 
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-    cv2.putText(combined_resized, 'HSV', (int((frame.shape[1] + 10)*SCALE_FACTOR), int(25*SCALE_FACTOR)), 
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-    cv2.putText(combined_resized, 'Mask', (10, int((frame.shape[0] + 25)*SCALE_FACTOR)), 
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-    cv2.putText(combined_resized, 'Result', (int((frame.shape[1] + 10)*SCALE_FACTOR), int((frame.shape[0] + 25)*SCALE_FACTOR)), 
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
+    # Tambahkan label text pada setiap frame
+    cv2.putText(combined, 'Original + BBox', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    cv2.putText(combined, 'HSV', (frame.shape[1] + 10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(combined, 'Mask', (10, frame.shape[0] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(combined, 'Result', (frame.shape[1] + 10, frame.shape[0] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     
     # Tambahkan info kalibrasi di frame
     info_text = f'Calibration: {calib_distance_cm}cm distance = {calib_pixel_area}px area'
-    cv2.putText(combined_resized, info_text, (10, int((combined.shape[0] - 35)*SCALE_FACTOR)), 
-               cv2.FONT_HERSHEY_SIMPLEX, font_scale*0.7, (0, 255, 255), thickness)
+    cv2.putText(combined, info_text, (10, combined.shape[0] - 35), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
     
     # Tambahkan instruksi kontrol
     control_text = "Press 'S' to Save Config | Press 'Q' to Quit"
-    cv2.putText(combined_resized, control_text, (10, int((combined.shape[0] - 15)*SCALE_FACTOR)), 
-               cv2.FONT_HERSHEY_SIMPLEX, font_scale*0.7, (255, 255, 0), thickness)
+    cv2.putText(combined, control_text, (10, combined.shape[0] - 15), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
     
     # Tampilkan frame gabungan
-    cv2.imshow('Color Detection', combined_resized)
+    cv2.imshow('Color Detection', combined)
     
     # Keluar jika tekan 'q' atau simpan config jika tekan 's'
     key = cv2.waitKey(1) & 0xFF
