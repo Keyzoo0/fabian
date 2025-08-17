@@ -11,72 +11,69 @@ from threading import Lock
 
 app = Flask(__name__)
 
-# Global variables - READ FROM TRACKBARV2 CONFIG
+# Global variables
 cap = None
 
-# Load HSV values from trackbarv2 config or use defaults
-def load_trackbarv2_config():
-    """Load configuration from trackbarv2.py color_detection_config.yaml"""
+# Load HSV values from config or use defaults
+def load_color_detection_config():
+    """Load configuration from color_detection_config.yaml"""
     try:
         with open('color_detection_config.yaml', 'r') as file:
             config = yaml.safe_load(file)
-            print("✅ Loaded trackbarv2 configuration from color_detection_config.yaml")
+            print("✅ Loaded color detection configuration from color_detection_config.yaml")
             return config
     except FileNotFoundError:
-        print("⚠️  trackbarv2 config file not found, using default HSV values")
+        print("⚠️  color_detection_config.yaml file not found, using default HSV values")
         return None
     except Exception as e:
-        print(f"❌ Error loading trackbarv2 config: {e}")
+        print(f"❌ Error loading color detection config: {e}")
         return None
 
-# Initialize values from trackbarv2 config or defaults
-trackbarv2_config = load_trackbarv2_config()
+# Initialize values from config or defaults
+color_config = load_color_detection_config()
 
-if trackbarv2_config and 'hsv' in trackbarv2_config:
-    # Use HSV values from trackbarv2
+# HSV values for color detection
+if color_config and 'hsv' in color_config:
     hsv_values = {
-        'h_min': trackbarv2_config['hsv']['h_min'],
-        's_min': trackbarv2_config['hsv']['s_min'], 
-        'v_min': trackbarv2_config['hsv']['v_min'],
-        'h_max': trackbarv2_config['hsv']['h_max'],
-        's_max': trackbarv2_config['hsv']['s_max'],
-        'v_max': trackbarv2_config['hsv']['v_max']
+        'h_min': color_config['hsv']['h_min'],
+        's_min': color_config['hsv']['s_min'], 
+        'v_min': color_config['hsv']['v_min'],
+        'h_max': color_config['hsv']['h_max'],
+        's_max': color_config['hsv']['s_max'],
+        'v_max': color_config['hsv']['v_max']
     }
-    print(f"🎨 Using HSV values from trackbarv2: {hsv_values}")
+    print(f"🎨 Using HSV values from config: {hsv_values}")
 else:
-    # Default HSV values for green color detection if config not found
     hsv_values = {
         'h_min': 33, 's_min': 159, 'v_min': 89,
         'h_max': 83, 's_max': 233, 'v_max': 190
     }
     print("🎨 Using default HSV values")
 
-# Load morphology values from trackbarv2 or use defaults
-if trackbarv2_config and 'morphology' in trackbarv2_config:
+# Morphology values
+if color_config and 'morphology' in color_config:
     morphology_values = {
-        'erosion': trackbarv2_config['morphology']['erosion'],
-        'dilation': trackbarv2_config['morphology']['dilation'],
-        'opening': trackbarv2_config['morphology']['opening'],
-        'closing': trackbarv2_config['morphology']['closing']
+        'erosion': color_config['morphology']['erosion'],
+        'dilation': color_config['morphology']['dilation'],
+        'opening': color_config['morphology']['opening'],
+        'closing': color_config['morphology']['closing']
     }
-    print(f"🔧 Using morphology values from trackbarv2: {morphology_values}")
+    print(f"🔧 Using morphology values from config: {morphology_values}")
 else:
-    # Default morphology values
     morphology_values = {
         'erosion': 1, 'dilation': 3, 'opening': 2, 'closing': 1
     }
     print("🔧 Using default morphology values")
 
-# Load calibration values from trackbarv2 or use defaults
-if trackbarv2_config and 'calibration' in trackbarv2_config:
+# Calibration values
+if color_config and 'calibration' in color_config:
     calibration_values = {
-        'calib_distance_cm': trackbarv2_config['calibration']['calib_distance_cm'],
-        'calib_pixel_area': trackbarv2_config['calibration']['calib_pixel_area'],
-        'min_area_threshold': trackbarv2_config['calibration']['min_area_threshold']
+        'calib_distance_cm': color_config['calibration']['calib_distance_cm'],
+        'calib_pixel_area': color_config['calibration']['calib_pixel_area'],
+        'min_area_threshold': color_config['calibration']['min_area_threshold']
     }
-    print(f"📏 Using calibration values from trackbarv2: {calibration_values}")
+    print(f"📏 Using calibration values from config: {calibration_values}")
 else:
-    # Default calibration values
     calibration_values = {
         'calib_distance_cm': 50,
         'calib_pixel_area': 5000,
@@ -84,27 +81,26 @@ else:
     }
     print("📏 Using default calibration values")
 
-# Load camera controls from trackbarv2 or use defaults
-if trackbarv2_config and 'camera_controls' in trackbarv2_config:
-    camera_controls_from_trackbar = {
-        'auto_exposure': trackbarv2_config['camera_controls']['auto_exposure'],
-        'exposure': trackbarv2_config['camera_controls']['exposure'],
-        'auto_wb': trackbarv2_config['camera_controls']['auto_wb'],
-        'wb_temperature': trackbarv2_config['camera_controls']['wb_temperature'],
-        'brightness': trackbarv2_config['camera_controls']['brightness'],
-        'contrast': trackbarv2_config['camera_controls']['contrast']
+# Camera controls
+if color_config and 'camera_controls' in color_config:
+    camera_controls_from_config = {
+        'auto_exposure': color_config['camera_controls']['auto_exposure'],
+        'exposure': color_config['camera_controls']['exposure'],
+        'auto_wb': color_config['camera_controls']['auto_wb'],
+        'wb_temperature': color_config['camera_controls']['wb_temperature'],
+        'brightness': color_config['camera_controls']['brightness'],
+        'contrast': color_config['camera_controls']['contrast']
     }
-    print(f"📷 Using camera controls from trackbarv2: {camera_controls_from_trackbar}")
+    print(f"📷 Using camera controls from config: {camera_controls_from_config}")
 else:
-    camera_controls_from_trackbar = {
+    camera_controls_from_config = {
         'auto_exposure': 0, 'exposure': 50, 'auto_wb': 0,
         'wb_temperature': 40, 'brightness': 50, 'contrast': 50
     }
     print("📷 Using default camera controls")
 
-# NEW: Control mode and PID parameters
-control_mode = 'manual'  # 'manual' or 'auto'
-# FIXED: Track last key pressed from web interface
+# Control mode and PID parameters
+control_mode = 'manual'
 last_key_pressed = 'none'
 pid_params = {
     'setpoint_jarak': 50.0,
@@ -112,7 +108,7 @@ pid_params = {
     'kp_arahhadap': 1.0, 'ki_arahhadap': 0.1, 'kd_arahhadap': 0.05
 }
 
-camera_controls = camera_controls_from_trackbar.copy()  # Use values from trackbarv2
+camera_controls = camera_controls_from_config.copy()
 object_data = {
     'x': 0, 'y': 0, 'distance': 0,
     'error_x': 0, 'error_y': 0, 'area': 0
@@ -134,10 +130,8 @@ def send_serial_data():
     global serial_port, object_data, control_mode, last_key_pressed, pid_params
     if serial_port and serial_port.is_open:
         try:
-            # Use the last key pressed from web interface
             tombol_ditekan = last_key_pressed
             
-            # Create data string - EXACT FORMAT AS REQUESTED
             data = f"{{{object_data['error_x']},{object_data['error_y']},{object_data['distance']},{object_data['area']},{control_mode},{tombol_ditekan},{pid_params['setpoint_jarak']},{pid_params['kp_jarak']},{pid_params['ki_jarak']},{pid_params['kd_jarak']},{pid_params['kp_arahhadap']},{pid_params['ki_arahhadap']},{pid_params['kd_arahhadap']}}}\n"
             
             serial_port.write(data.encode())
@@ -146,34 +140,27 @@ def send_serial_data():
         except Exception as e:
             print(f"❌ Serial send error: {e}")
 
-# Load initial config (prioritize control_config.yaml, then trackbarv2 config)
 def load_config():
     global control_mode, pid_params, camera_controls
     try:
-        # Try to load control_config.yaml first (for PID and control mode)
         with open('control_config.yaml', 'r') as file:
             config = yaml.safe_load(file)
             control_mode = config.get('control_mode', 'manual')
             pid_params = config.get('pid_params', pid_params)
             
-            # Use camera controls from control_config if available, otherwise use trackbarv2 values
             if 'camera_controls' in config:
                 camera_controls.update(config['camera_controls'])
-            else:
-                # Keep camera_controls from trackbarv2
-                pass
                 
             print(f"✅ Control config loaded - Mode: {control_mode}")
             print(f"📷 Camera controls: {camera_controls}")
     except FileNotFoundError:
-        print("⚠️  control_config.yaml not found, using trackbarv2 camera values and default control settings")
+        print("⚠️  control_config.yaml not found, using default control settings")
 
 def save_config():
     config = {
         'control_mode': control_mode,
         'pid_params': pid_params,
         'camera_controls': camera_controls,
-        # Also save the loaded HSV, morphology and calibration values for backup
         'hsv_values': hsv_values,
         'morphology_values': morphology_values,
         'calibration_values': calibration_values
@@ -182,15 +169,25 @@ def save_config():
     with open('control_config.yaml', 'w') as file:
         yaml.dump(config, file, default_flow_style=False)
     print(f"✅ Config saved - Control mode: {control_mode}")
-    print(f"💾 Saved HSV values: {hsv_values}")
-    print(f"💾 Saved morphology values: {morphology_values}")
-    print(f"💾 Saved calibration values: {calibration_values}")
+
+def save_calibration_config():
+    """Save calibration values to color_detection_config.yaml"""
+    config = {
+        'hsv': hsv_values,
+        'morphology': morphology_values,
+        'calibration': calibration_values,
+        'camera_controls': camera_controls_from_config
+    }
+    
+    with open('color_detection_config.yaml', 'w') as file:
+        yaml.dump(config, file, default_flow_style=False)
+    print(f"✅ Calibration config saved to color_detection_config.yaml")
 
 def initialize_camera():
     global cap
     if cap is None:
         print("🎥 Trying to initialize camera...")
-        camera_indices = [0]
+        camera_indices = [2]
         
         for camera_index in camera_indices:
             try:
@@ -298,21 +295,16 @@ def process_frame():
             cap = None
             return None, None, None, None, None
         
-        # Get frame dimensions
         frame_height, frame_width = frame.shape[:2]
         frame_center_x, frame_center_y = frame_width // 2, frame_height // 2
         
-        # Convert BGR to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         
-        # Create HSV range (FIXED VALUES)
         lower = np.array([hsv_values['h_min'], hsv_values['s_min'], hsv_values['v_min']])
         upper = np.array([hsv_values['h_max'], hsv_values['s_max'], hsv_values['v_max']])
         
-        # Create mask
         mask = cv2.inRange(hsv, lower, upper)
         
-        # Apply fixed morphology operations
         if morphology_values['erosion'] > 0:
             kernel_erosion = np.ones((morphology_values['erosion'], morphology_values['erosion']), np.uint8)
             mask = cv2.erode(mask, kernel_erosion, iterations=1)
@@ -329,33 +321,25 @@ def process_frame():
             kernel_closing = np.ones((morphology_values['closing'], morphology_values['closing']), np.uint8)
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_closing)
         
-        # Apply mask to original frame
         result = cv2.bitwise_and(frame, frame, mask=mask)
         
-        # Convert mask to 3 channel for display
         mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         
-        # Create frame with bounding box and tracking info
         frame_with_box = frame.copy()
         
-        # Add center crosshair (yellow)
         cv2.line(frame_with_box, (0, frame_center_y), (frame_width, frame_center_y), (0, 255, 255), 1)
         cv2.line(frame_with_box, (frame_center_x, 0), (frame_center_x, frame_height), (0, 255, 255), 1)
         cv2.circle(frame_with_box, (frame_center_x, frame_center_y), 3, (0, 255, 255), -1)
         
-        # Find contours and draw bounding box
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         if contours:
-            # Find largest contour
             largest_contour = max(contours, key=cv2.contourArea)
             area = cv2.contourArea(largest_contour)
             
-            # Only process if area is above threshold
             if area > calibration_values['min_area_threshold']:
                 x, y, w, h = cv2.boundingRect(largest_contour)
                 
-                # Calculate distance based on calibration
                 current_pixel_area = area
                 
                 if calibration_values['calib_pixel_area'] > 0 and calibration_values['calib_distance_cm'] > 0:
@@ -363,25 +347,19 @@ def process_frame():
                 else:
                     estimated_distance = 0
                 
-                # Draw bounding box (green)
                 cv2.rectangle(frame_with_box, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 
-                # Object center
                 center_x, center_y = x + w//2, y + h//2
                 
-                # Calculate error from frame center
                 error_x = center_x - frame_center_x
                 error_y = center_y - frame_center_y
                 
-                # Draw object center crosshair (red)
                 cv2.circle(frame_with_box, (center_x, center_y), 5, (0, 0, 255), -1)
                 cv2.line(frame_with_box, (center_x-10, center_y), (center_x+10, center_y), (0, 0, 255), 2)
                 cv2.line(frame_with_box, (center_x, center_y-10), (center_x, center_y+10), (0, 0, 255), 2)
                 
-                # Draw line from center to object (cyan)
                 cv2.line(frame_with_box, (frame_center_x, frame_center_y), (center_x, center_y), (255, 255, 0), 2)
                 
-                # Add text information
                 cv2.putText(frame_with_box, f'Area: {int(area)} px', (x, y - 30), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.putText(frame_with_box, f'Distance: {estimated_distance:.1f} cm', (x, y - 10), 
@@ -391,26 +369,22 @@ def process_frame():
                 cv2.putText(frame_with_box, f'Error Y: {error_y:+d} px', (x, y - 70), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
                 
-                # Update global object data
                 object_data.update({
                     'x': center_x, 'y': center_y, 'distance': estimated_distance,
                     'error_x': error_x, 'error_y': error_y, 'area': int(area)
                 })
                 
             else:
-                # Reset object data if no valid object found
                 object_data.update({
                     'x': 0, 'y': 0, 'distance': 0,
                     'error_x': 0, 'error_y': 0, 'area': 0
                 })
         else:
-            # Reset object data if no contours found
             object_data.update({
                 'x': 0, 'y': 0, 'distance': 0,
                 'error_x': 0, 'error_y': 0, 'area': 0
             })
         
-        # Send serial data
         send_serial_data()
         
         return frame, hsv, mask_3ch, result, frame_with_box
@@ -453,20 +427,80 @@ def get_frames():
         print(f"Error in get_frames: {e}")
         return jsonify({'error': f'Frame processing error: {str(e)}'})
 
+@app.route('/get_calibration_frames')
+def get_calibration_frames():
+    """Get frames specifically for calibration modal"""
+    try:
+        original, hsv, mask, result, frame_with_box = process_frame()
+        
+        if original is None:
+            return jsonify({'error': 'Camera not available'})
+        
+        frames = {
+            'mask': frame_to_base64(mask),
+            'result': frame_to_base64(result)
+        }
+        
+        return jsonify(frames)
+    
+    except Exception as e:
+        print(f"Error in get_calibration_frames: {e}")
+        return jsonify({'error': f'Calibration frame processing error: {str(e)}'})
+
+@app.route('/get_calibration_values')
+def get_calibration_values():
+    """Get current calibration values for the modal sliders"""
+    try:
+        values = {}
+        values.update(hsv_values)
+        values.update(morphology_values)
+        values.update(calibration_values)
+        
+        return jsonify(values)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/update_calibration_values', methods=['POST'])
+def update_calibration_values():
+    """Update calibration values from modal sliders"""
+    global hsv_values, morphology_values, calibration_values
+    try:
+        data = request.get_json()
+        
+        for key, value in data.items():
+            if key in hsv_values:
+                hsv_values[key] = value
+            elif key in morphology_values:
+                morphology_values[key] = value
+            elif key in calibration_values:
+                calibration_values[key] = value
+        
+        print(f"🎨 Calibration values updated: {data}")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/save_calibration', methods=['POST'])
+def save_calibration():
+    """Save calibration settings to YAML file"""
+    try:
+        save_calibration_config()
+        return jsonify({'status': 'success', 'message': 'Calibration saved successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
 @app.route('/update_control_mode', methods=['POST'])
 def update_control_mode():
     global control_mode, last_key_pressed
     try:
         data = request.get_json()
         control_mode = data['mode']
-        # Reset last key when switching modes
         last_key_pressed = 'none'
         print(f"🔄 Control mode changed to: {control_mode}")
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-# NEW: Route to update last key pressed from web interface
 @app.route('/update_last_key', methods=['POST'])
 def update_last_key():
     global last_key_pressed
@@ -546,7 +580,7 @@ if __name__ == '__main__':
     if os.environ.get('WERKZEUG_RUN_MAIN') or not app.debug:
         load_config()
         initialize_serial()
-        print("🚀 Starting Object Tracking Control System with TrackbarV2 Integration...")
+        print("🚀 Starting Object Tracking Control System with Web Calibration...")
         print(f"🎨 HSV Detection Values: H({hsv_values['h_min']}-{hsv_values['h_max']}) S({hsv_values['s_min']}-{hsv_values['s_max']}) V({hsv_values['v_min']}-{hsv_values['v_max']})")
         print(f"🔧 Morphology: erosion={morphology_values['erosion']}, dilation={morphology_values['dilation']}, opening={morphology_values['opening']}, closing={morphology_values['closing']}")
         print(f"📏 Calibration: {calibration_values['calib_distance_cm']}cm = {calibration_values['calib_pixel_area']}px, min_area={calibration_values['min_area_threshold']}")

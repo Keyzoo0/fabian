@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simplified Object Tracking Control</title>
+    <title>Professional Object Tracking Control System</title>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       * {
         margin: 0;
@@ -15,25 +16,52 @@
         box-sizing: border-box;
       }
 
+      :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-tertiary: #334155;
+        --bg-card: #1e293b;
+        --bg-card-hover: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #64748b;
+        --accent-primary: #3b82f6;
+        --accent-secondary: #10b981;
+        --accent-danger: #ef4444;
+        --accent-warning: #f59e0b;
+        --accent-purple: #8b5cf6;
+        --accent-cyan: #06b6d4;
+        --border-color: #475569;
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+          0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4),
+          0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      }
+
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, var(--bg-primary) 0%, #1a202c 100%);
         min-height: 100vh;
-        color: #333;
+        color: var(--text-primary);
+        line-height: 1.6;
       }
 
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem 2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(
+          135deg,
+          var(--bg-secondary) 0%,
+          var(--bg-tertiary) 100%
+        );
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+        box-shadow: var(--shadow-lg);
       }
 
       .header-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        max-width: 1400px;
+        max-width: 1800px;
         margin: 0 auto;
       }
 
@@ -45,7 +73,20 @@
 
       .header-left h1 {
         font-size: 1.5rem;
-        font-weight: 600;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header-left i {
+        font-size: 1.8rem;
+        color: var(--accent-primary);
       }
 
       .header-right {
@@ -58,101 +99,433 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
       }
 
       .status-dot {
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: #fbbf24;
+        background: var(--accent-warning);
         animation: pulse 2s infinite;
       }
 
       .status-dot.connected {
-        background: #10b981;
+        background: var(--accent-secondary);
       }
       .status-dot.disconnected {
-        background: #ef4444;
+        background: var(--accent-danger);
       }
 
       .main-container {
         display: grid;
-        grid-template-columns: 300px 1fr 300px;
-        gap: 1.5rem;
-        padding: 1.5rem;
-        max-width: 1400px;
-        margin: 0 auto;
-        min-height: calc(100vh - 80px);
+        grid-template-columns: 280px 1.6fr 1fr;
+        grid-template-rows: 3fr 1fr;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        height: calc(100vh - 65px);
+        overflow: hidden;
       }
 
-      /* Left Panel - Control Mode */
+      /* Left Panel - Controls */
       .left-panel {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
         overflow-y: auto;
-        max-height: calc(100vh - 120px);
+        grid-row: 1 / 3;
       }
 
       .control-section {
-        margin-bottom: 1rem;
-        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        border-radius: 6px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
       }
 
       .section-header {
-        padding: 1rem;
-        color: white;
+        padding: 0.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--bg-tertiary),
+          var(--bg-secondary)
+        );
+        color: var(--text-primary);
         font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.75rem;
+      }
+
+      .section-content {
+        padding: 0.5rem;
+        background: var(--bg-card);
+      }
+
+      /* Camera Frames Panel - 2x2 Grid */
+      .camera-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 0.75rem;
+        grid-column: 2;
+        grid-row: 1;
+        padding: 0.5rem;
+      }
+
+      /* Charts Panel - 3 Charts Vertical */
+      .charts-panel {
+        display: grid;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0.5rem;
+        grid-column: 3;
+        grid-row: 1;
+      }
+
+      /* Bottom Panel - Switchable Data Panel */
+      .bottom-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        grid-column: 2 / 4;
+        grid-row: 2;
+      }
+
+      .data-tabs {
+        display: flex;
+        background: var(--bg-card);
+        border-radius: 8px 8px 0 0;
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+      }
+
+      .data-tab {
+        flex: 1;
+        padding: 0.5rem;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        border: none;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .data-tab:first-child {
+        border-radius: 8px 0 0 0;
+      }
+
+      .data-tab:last-child {
+        border-radius: 0 8px 0 0;
+      }
+
+      .data-tab.active {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+
+      .data-content {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+      }
+
+      .tab-panel {
+        display: none;
+        height: 100%;
+        padding: 0.5rem;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .data-card,
+      .chart-card {
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .data-card:hover,
+      .chart-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--accent-primary);
+      }
+
+      .card-header {
+        padding: 0.5rem 0.75rem;
+        background: linear-gradient(
+          135deg,
+          var(--bg-tertiary),
+          var(--bg-secondary)
+        );
+        border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         gap: 0.5rem;
       }
 
-      .mode-header {
-        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      .card-header h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
       }
 
-      .manual-header {
-        background: linear-gradient(135deg, #feca57, #ff9ff3);
+      .card-header i {
+        color: var(--accent-primary);
+        font-size: 0.875rem;
       }
 
-      .auto-header {
-        background: linear-gradient(135deg, #a55eea, #26de81);
+      .card-content {
+        padding: 0.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
       }
 
-      .camera-header {
-        background: linear-gradient(135deg, #45b7d1, #96c93d);
+      /* Object Data Grid */
+      .object-data-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
       }
 
-      .system-header {
-        background: linear-gradient(135deg, #6c757d, #495057);
+      .data-item {
+        background: var(--bg-secondary);
+        padding: 0.75rem;
+        border-radius: 6px;
+        text-align: center;
+        border-left: 3px solid;
+        transition: all 0.3s ease;
       }
 
-      .section-content {
+      .data-item:hover {
+        background: var(--bg-card-hover);
+        transform: scale(1.02);
+      }
+
+      .position-x {
+        border-left-color: var(--accent-primary);
+      }
+      .position-y {
+        border-left-color: var(--accent-secondary);
+      }
+      .error-x {
+        border-left-color: var(--accent-danger);
+      }
+      .error-y {
+        border-left-color: var(--accent-warning);
+      }
+      .distance {
+        border-left-color: var(--accent-purple);
+      }
+      .area {
+        border-left-color: var(--accent-cyan);
+      }
+
+      .data-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .data-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+      }
+
+      .data-unit {
+        font-size: 0.625rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* Status Indicators */
+      .status-indicators {
+        background: var(--bg-secondary);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+      }
+
+      .indicator-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .indicator-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .indicator-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent-danger);
+        transition: all 0.3s ease;
+      }
+
+      .indicator-dot.active {
+        background: var(--accent-secondary);
+        animation: pulse 2s infinite;
+        box-shadow: 0 0 10px var(--accent-secondary);
+      }
+
+      /* Robot Simulation */
+      .robot-simulation {
+        background: var(--bg-secondary);
         padding: 1.5rem;
-        background: white;
+        border-radius: 8px;
+        text-align: center;
       }
 
+      .robot-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1rem 0;
+      }
+
+      .robot {
+        position: relative;
+        width: 120px;
+        height: 80px;
+        background: linear-gradient(
+          135deg,
+          var(--bg-tertiary),
+          var(--bg-primary)
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        box-shadow: var(--shadow-lg);
+        border: 2px solid var(--border-color);
+      }
+
+      .wheel {
+        width: 16px;
+        height: 50px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+      }
+
+      .wheel.active {
+        background: var(--accent-secondary);
+        animation: wheel-spin 1s linear infinite;
+        box-shadow: 0 0 15px var(--accent-secondary);
+      }
+
+      .wheel.inactive {
+        background: var(--accent-danger);
+      }
+
+      .wheel.forward {
+        animation: wheel-spin 1s linear infinite;
+      }
+
+      .wheel.backward {
+        animation: wheel-spin-reverse 1s linear infinite;
+      }
+
+      .robot-direction {
+        position: absolute;
+        top: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        color: var(--accent-primary);
+        text-shadow: 0 0 10px var(--accent-primary);
+      }
+
+      .speed-indicators {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .speed-bar {
+        width: 50px;
+        height: 8px;
+        background: var(--bg-primary);
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+      }
+
+      .speed-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 4px;
+      }
+
+      /* Chart Container */
+      .chart-container {
+        height: 100%;
+        min-height: 160px;
+        padding: 0.25rem;
+        position: relative;
+      }
+
+      /* Serial Monitor */
+      .serial-monitor {
+        background: var(--bg-primary);
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+        font-size: 0.7rem;
+        height: 60px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        color: var(--accent-secondary);
+        line-height: 1.3;
+      }
+
+      /* Control Elements */
       .control-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
       }
 
       .control-group label {
         display: block;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         font-weight: 500;
-        color: #4a5568;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
       }
 
-      .control-group span {
-        color: #2d3748;
-        font-weight: 600;
-      }
-
-      /* Mode Selection */
       .mode-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -162,26 +535,30 @@
 
       .mode-btn {
         padding: 0.75rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
         cursor: pointer;
         transition: all 0.3s ease;
         text-align: center;
         font-weight: 600;
+        font-size: 0.875rem;
       }
 
       .mode-btn.active {
-        border-color: #667eea;
-        background: #667eea;
+        border-color: var(--accent-primary);
+        background: var(--accent-primary);
         color: white;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
       }
 
-      .mode-btn:hover {
-        border-color: #667eea;
+      .mode-btn:hover:not(.active) {
+        border-color: var(--accent-primary);
+        background: var(--bg-card-hover);
       }
 
-      /* WASD Controls - REVISED */
+      /* WASD Controls */
       .wasd-controls {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -193,9 +570,10 @@
       .wasd-key {
         width: 40px;
         height: 40px;
-        border: 2px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -204,11 +582,10 @@
         transition: all 0.3s ease;
       }
 
-      /* REVISED: Only show active state for current pressed key */
       .wasd-key.current {
-        background: #10b981;
+        background: var(--accent-secondary);
         color: white;
-        border-color: #10b981;
+        border-color: var(--accent-secondary);
         transform: scale(1.1);
         box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
       }
@@ -229,31 +606,6 @@
         grid-row: 2;
       }
 
-      /* PID Input */
-      .pid-input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #cbd5e0;
-        border-radius: 4px;
-        font-size: 0.875rem;
-      }
-
-      .pid-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
-
-      .pid-group {
-        text-align: center;
-      }
-
-      .pid-group label {
-        font-size: 0.75rem;
-        margin-bottom: 0.25rem;
-      }
-
       /* Buttons */
       .button-group {
         display: grid;
@@ -265,7 +617,7 @@
       .btn {
         padding: 0.75rem 1rem;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -274,75 +626,235 @@
         justify-content: center;
         gap: 0.5rem;
         font-size: 0.875rem;
+        border: 1px solid transparent;
       }
 
       .btn:disabled {
-        opacity: 0.6;
+        opacity: 0.5;
         cursor: not-allowed;
       }
 
       .btn-success {
-        background: linear-gradient(135deg, #10b981, #065f46);
+        background: var(--accent-secondary);
         color: white;
+        border-color: var(--accent-secondary);
       }
       .btn-danger {
-        background: linear-gradient(135deg, #ef4444, #991b1b);
+        background: var(--accent-danger);
         color: white;
+        border-color: var(--accent-danger);
       }
       .btn-primary {
-        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        background: var(--accent-primary);
         color: white;
+        border-color: var(--accent-primary);
       }
       .btn-secondary {
-        background: linear-gradient(135deg, #6b7280, #374151);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+      }
+      .btn-calibrate {
+        background: var(--accent-warning);
         color: white;
+        border-color: var(--accent-warning);
       }
 
       .btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-lg);
+        filter: brightness(1.1);
       }
 
-      /* Center Panel - Camera Feeds */
-      .center-panel {
+      /* Input Elements */
+      .pid-input,
+      input[type="range"] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+      }
+
+      .pid-input:focus,
+      input[type="range"]:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      input[type="range"] {
+        height: 6px;
+        background: var(--bg-tertiary);
+        -webkit-appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        border: 2px solid white;
+      }
+
+      .pid-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .pid-group {
+        text-align: center;
+      }
+
+      .pid-group label {
+        font-size: 0.7rem;
+        margin-bottom: 0.2rem;
+        color: var(--text-muted);
+      }
+
+      /* Last Key Display */
+      .last-key-display {
+        background: var(--bg-secondary);
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-top: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--border-color);
+      }
+
+      .last-key-display h4 {
+        color: var(--text-secondary);
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+      }
+
+      .last-key-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--accent-secondary);
+        padding: 0.4rem;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        border: 2px solid var(--border-color);
+        min-height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .last-key-value.none {
+        color: var(--text-muted);
+      }
+
+      /* Calibration Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        display: none;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+      }
+
+      .calibration-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        max-width: 1400px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-xl);
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 2rem;
+        padding: 2rem;
+        margin: 2rem;
+      }
+
+      .calibration-main {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1rem;
       }
 
-      .main-camera {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        flex: 2;
-      }
-
-      .camera-header-display {
-        background: linear-gradient(135deg, #1f2937, #111827);
-        color: white;
-        padding: 1rem 1.5rem;
+      .calibration-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1rem;
       }
 
-      .camera-header-display h2 {
+      .calibration-header h2 {
+        color: var(--text-primary);
+        font-size: 1.5rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 1.125rem;
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .close-modal {
+        background: var(--accent-danger);
+        border: none;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         font-weight: 600;
       }
 
-      .main-frame {
-        aspect-ratio: 4/3;
-        position: relative;
-        background: #000;
-        overflow: hidden;
+      .close-modal:hover {
+        background: #dc2626;
+        transform: scale(1.05);
       }
 
-      .camera-frame img {
+      .calibration-frames {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        flex: 1;
+      }
+
+      .calibration-frame {
+        aspect-ratio: 4/3;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid var(--border-color);
+      }
+
+      .calibration-frame img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -361,201 +873,68 @@
         z-index: 10;
       }
 
-      /* Processing Views */
-      .processing-views {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        flex: 1;
-      }
-
-      .processing-frame {
-        aspect-ratio: 4/3;
-        position: relative;
-        background: #000;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      }
-
-      .processing-frame img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      /* Right Panel - Data */
-      .right-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-
-      .data-section {
-        background: white;
+      .calibration-controls {
+        background: var(--bg-secondary);
         border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
+        padding: 1.5rem;
+        overflow-y: auto;
+        max-height: 80vh;
+        border: 1px solid var(--border-color);
       }
 
-      .tracking-header {
-        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-      }
-      .info-header {
-        background: linear-gradient(135deg, #06b6d4, #0891b2);
-      }
-
-      /* Data Grid */
-      .data-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .data-card {
-        background: #f8fafc;
-        padding: 1rem;
+      .calibration-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+        background: var(--bg-primary);
         border-radius: 8px;
-        text-align: center;
-        border-left: 4px solid;
+        padding: 0.25rem;
+      }
+
+      .calibration-tab {
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: var(--text-muted);
         transition: all 0.3s ease;
-      }
-
-      .data-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      .position-x {
-        border-left-color: #3b82f6;
-      }
-      .position-y {
-        border-left-color: #10b981;
-      }
-      .error-x {
-        border-left-color: #ef4444;
-      }
-      .error-y {
-        border-left-color: #f59e0b;
-      }
-      .distance {
-        border-left-color: #8b5cf6;
-      }
-      .area {
-        border-left-color: #06b6d4;
-      }
-
-      .data-label {
-        font-size: 0.75rem;
-        color: #6b7280;
-        margin-bottom: 0.25rem;
+        flex: 1;
+        text-align: center;
+        border-radius: 6px;
         font-weight: 500;
       }
 
-      .data-value {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 0.25rem;
+      .calibration-tab.active {
+        color: white;
+        background: var(--accent-primary);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
       }
 
-      .data-unit {
-        font-size: 0.625rem;
-        color: #9ca3af;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+      .calibration-tab-content {
+        display: none;
       }
 
-      /* Status Indicators */
-      .status-indicators {
-        background: #f8fafc;
-        padding: 1rem;
-        border-radius: 8px;
+      .calibration-tab-content.active {
+        display: block;
       }
 
-      .indicator-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.75rem;
+      .slider-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .slider-group label {
+        display: block;
         font-size: 0.875rem;
-      }
-
-      .indicator-item:last-child {
-        margin-bottom: 0;
-      }
-
-      .indicator-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #ef4444;
-        transition: all 0.3s ease;
-      }
-
-      .indicator-dot.active {
-        background: #10b981;
-        animation: pulse 2s infinite;
-      }
-
-      /* Control Status - REVISED */
-      .control-status {
-        background: #f0f9ff;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-      }
-
-      .control-status h4 {
-        color: #0369a1;
+        font-weight: 500;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
-        font-size: 0.875rem;
       }
 
-      .status-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.25rem;
-        font-size: 0.75rem;
-      }
-
-      .status-value {
+      .slider-value {
+        float: right;
+        color: var(--accent-primary);
         font-weight: 600;
-        color: #1f2937;
-      }
-
-      /* REVISED: Last key display */
-      .last-key-display {
-        background: #f8fafc;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-        text-align: center;
-      }
-
-      .last-key-display h4 {
-        color: #374151;
-        margin-bottom: 0.5rem;
-        font-size: 0.875rem;
-      }
-
-      .last-key-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #10b981;
-        padding: 0.5rem;
-        background: white;
-        border-radius: 8px;
-        border: 2px solid #e5e7eb;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .last-key-value.none {
-        color: #9ca3af;
       }
 
       /* Toast Notifications */
@@ -563,16 +942,17 @@
         position: fixed;
         bottom: 2rem;
         right: 2rem;
-        z-index: 1000;
+        z-index: 1001;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
       }
 
       .toast {
-        background: white;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
         border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-xl);
         padding: 1rem 1.5rem;
         min-width: 300px;
         max-width: 400px;
@@ -589,32 +969,32 @@
       }
 
       .toast.success {
-        border-left-color: #10b981;
+        border-left-color: var(--accent-secondary);
       }
       .toast.error {
-        border-left-color: #ef4444;
+        border-left-color: var(--accent-danger);
       }
       .toast.warning {
-        border-left-color: #f59e0b;
+        border-left-color: var(--accent-warning);
       }
       .toast.info {
-        border-left-color: #3b82f6;
+        border-left-color: var(--accent-primary);
       }
 
       .toast-icon {
         font-size: 1.25rem;
       }
       .toast.success .toast-icon {
-        color: #10b981;
+        color: var(--accent-secondary);
       }
       .toast.error .toast-icon {
-        color: #ef4444;
+        color: var(--accent-danger);
       }
       .toast.warning .toast-icon {
-        color: #f59e0b;
+        color: var(--accent-warning);
       }
       .toast.info .toast-icon {
-        color: #3b82f6;
+        color: var(--accent-primary);
       }
 
       .toast-content {
@@ -623,14 +1003,14 @@
       .toast-message {
         font-size: 0.875rem;
         font-weight: 500;
-        color: #1f2937;
+        color: var(--text-primary);
       }
 
       .toast-close {
         background: none;
         border: none;
         font-size: 1rem;
-        color: #9ca3af;
+        color: var(--text-muted);
         cursor: pointer;
         padding: 0;
         width: 20px;
@@ -643,8 +1023,8 @@
       }
 
       .toast-close:hover {
-        background: #f3f4f6;
-        color: #6b7280;
+        background: var(--bg-card-hover);
+        color: var(--text-secondary);
       }
 
       /* Animations */
@@ -658,30 +1038,164 @@
         }
       }
 
+      @keyframes wheel-spin {
+        0% {
+          transform: rotateX(0deg);
+        }
+        100% {
+          transform: rotateX(360deg);
+        }
+      }
+
+      @keyframes wheel-spin-reverse {
+        0% {
+          transform: rotateX(360deg);
+        }
+        100% {
+          transform: rotateX(0deg);
+        }
+      }
+
+      /* Camera Views */
+      .main-camera {
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        height: 50%;
+      }
+
+      .camera-header-display {
+        background: linear-gradient(
+          135deg,
+          var(--bg-tertiary),
+          var(--bg-secondary)
+        );
+        color: var(--text-primary);
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .camera-header-display h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .camera-frame {
+        aspect-ratio: 4/3;
+        position: relative;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        height: 100%;
+        min-height: 200px;
+      }
+
+      .camera-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .processing-views {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        height: 80px;
+      }
+
+      .processing-frame {
+        position: relative;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        height: 100%;
+      }
+
+      .processing-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Control Status */
+      .control-status {
+        background: var(--bg-secondary);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        border: 1px solid var(--border-color);
+      }
+
+      .control-status h4 {
+        color: var(--accent-primary);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
+
       /* Responsive Design */
-      @media (max-width: 1200px) {
+      @media (max-width: 1600px) {
         .main-container {
-          grid-template-columns: 1fr;
-          grid-template-rows: auto auto auto;
+          grid-template-columns: 220px 1.6fr 1fr;
         }
 
-        .data-grid {
-          grid-template-columns: repeat(3, 1fr);
+        .charts-row {
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(4, 1fr);
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .main-container {
+          grid-template-columns: 200px 1.6fr 1fr;
+        }
+
+        .object-data-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
 
         .processing-views {
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
         }
       }
 
       @media (max-width: 768px) {
-        .header-content {
-          flex-direction: column;
-          gap: 1rem;
-          text-align: center;
+        .main-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto auto;
+          height: auto;
         }
 
-        .data-grid {
+        .center-panel {
+          grid-template-rows: auto auto;
+        }
+
+        .right-panel {
+          grid-template-rows: auto auto;
+        }
+
+        .charts-row {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+        }
+
+        .bottom-row {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+
+        .object-data-grid {
           grid-template-columns: repeat(2, 1fr);
         }
 
@@ -689,11 +1203,9 @@
           grid-template-columns: 1fr;
         }
 
-        .mode-selector {
-          grid-template-columns: 1fr;
-        }
-
-        .button-group {
+        .calibration-modal {
+          margin: 1rem;
+          padding: 1rem;
           grid-template-columns: 1fr;
         }
       }
@@ -705,14 +1217,14 @@
       <div class="header-content">
         <div class="header-left">
           <i class="fas fa-robot"></i>
-          <h1>Object Tracking Control System</h1>
+          <h1>Professional Object Tracking Control System</h1>
         </div>
         <div class="header-right">
           <div class="status-indicator">
             <div class="status-dot" id="status-indicator"></div>
             <span id="status-text">Connecting...</span>
           </div>
-          <div class="serial-status">
+          <div class="status-indicator">
             Serial: <span id="serial-status">Connected</span>
           </div>
         </div>
@@ -725,7 +1237,7 @@
       <aside class="left-panel">
         <!-- Control Mode Selection -->
         <div class="control-section">
-          <div class="section-header mode-header">
+          <div class="section-header">
             <i class="fas fa-toggle-on"></i>
             <h3>Control Mode</h3>
           </div>
@@ -754,7 +1266,7 @@
 
         <!-- Manual Control -->
         <div class="control-section" id="manual-section">
-          <div class="section-header manual-header">
+          <div class="section-header">
             <i class="fas fa-gamepad"></i>
             <h3>Manual Control (WASD)</h3>
           </div>
@@ -770,13 +1282,11 @@
                 text-align: center;
                 margin-top: 1rem;
                 font-size: 0.75rem;
-                color: #6b7280;
+                color: var(--text-muted);
               "
             >
               Use W/A/S/D keys to control movement
             </p>
-
-            <!-- Last key pressed display -->
             <div class="last-key-display">
               <h4>Last Key Pressed:</h4>
               <div class="last-key-value" id="last-key-value">NONE</div>
@@ -786,7 +1296,7 @@
 
         <!-- Auto PID Control -->
         <div class="control-section" id="auto-section" style="display: none">
-          <div class="section-header auto-header">
+          <div class="section-header">
             <i class="fas fa-robot"></i>
             <h3>Auto PID Control</h3>
           </div>
@@ -807,7 +1317,9 @@
               />
             </div>
 
-            <h4 style="margin: 1rem 0 0.5rem 0; color: #374151">PID Jarak:</h4>
+            <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary)">
+              PID Jarak:
+            </h4>
             <div class="pid-grid">
               <div class="pid-group">
                 <label>Kp</label>
@@ -844,7 +1356,7 @@
               </div>
             </div>
 
-            <h4 style="margin: 1rem 0 0.5rem 0; color: #374151">
+            <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary)">
               PID Arah Hadap:
             </h4>
             <div class="pid-grid">
@@ -885,41 +1397,75 @@
           </div>
         </div>
 
-        <!-- Camera Controls -->
+        <!-- Robot Simulation -->
         <div class="control-section">
-          <div class="section-header camera-header">
-            <i class="fas fa-cog"></i>
-            <h3>Camera Settings</h3>
+          <div class="section-header">
+            <i class="fas fa-robot"></i>
+            <h3>Robot Simulation</h3>
           </div>
           <div class="section-content">
-            <div class="control-group">
-              <label>Brightness: <span id="brightness-value">50</span></label>
-              <input
-                type="range"
-                id="brightness"
-                min="0"
-                max="100"
-                value="50"
-                oninput="updateCameraControl('brightness', this.value)"
-              />
+            <div class="robot-simulation">
+              <div class="robot-container">
+                <div class="robot">
+                  <div class="wheel" id="left-wheel-ctrl"></div>
+                  <div class="robot-direction" id="robot-direction-ctrl">
+                    ⬆️
+                  </div>
+                  <div class="wheel" id="right-wheel-ctrl"></div>
+                </div>
+              </div>
+              <div class="speed-indicators">
+                <div style="text-align: center; margin-bottom: 0.5rem">
+                  <div style="font-size: 0.7rem">Left Motor</div>
+                  <div class="speed-bar">
+                    <div
+                      class="speed-fill"
+                      id="left-speed-ctrl"
+                      style="background: var(--accent-secondary); width: 0%"
+                    ></div>
+                  </div>
+                  <span id="left-speed-text-ctrl" style="font-size: 0.7rem"
+                    >0%</span
+                  >
+                </div>
+                <div style="text-align: center">
+                  <div style="font-size: 0.7rem">Right Motor</div>
+                  <div class="speed-bar">
+                    <div
+                      class="speed-fill"
+                      id="right-speed-ctrl"
+                      style="background: var(--accent-secondary); width: 0%"
+                    ></div>
+                  </div>
+                  <span id="right-speed-text-ctrl" style="font-size: 0.7rem"
+                    >0%</span
+                  >
+                </div>
+              </div>
             </div>
-            <div class="control-group">
-              <label>Contrast: <span id="contrast-value">50</span></label>
-              <input
-                type="range"
-                id="contrast"
-                min="0"
-                max="100"
-                value="50"
-                oninput="updateCameraControl('contrast', this.value)"
-              />
-            </div>
+          </div>
+        </div>
+
+        <!-- Calibration Section -->
+        <div class="control-section">
+          <div class="section-header">
+            <i class="fas fa-sliders-h"></i>
+            <h3>Calibration</h3>
+          </div>
+          <div class="section-content">
+            <button
+              class="btn btn-calibrate"
+              style="width: 100%"
+              onclick="openCalibrationModal()"
+            >
+              <i class="fas fa-cog"></i>Open Calibration
+            </button>
           </div>
         </div>
 
         <!-- System Controls -->
         <div class="control-section">
-          <div class="section-header system-header">
+          <div class="section-header">
             <i class="fas fa-tools"></i>
             <h3>System</h3>
           </div>
@@ -961,137 +1507,598 @@
         </div>
       </aside>
 
-      <!-- Center Panel - Camera Feeds -->
-      <section class="center-panel">
-        <!-- Main Camera Display -->
-        <div class="main-camera">
-          <div class="camera-header-display">
-            <h2><i class="fas fa-video"></i>Object Tracking View</h2>
+      <!-- Camera Panel - 2x2 Grid -->
+      <div class="camera-panel">
+        <!-- Main Camera Frame -->
+        <div class="camera-frame">
+          <div class="frame-label">Main + Tracking</div>
+          <img id="original-frame" src="" alt="Original Frame" />
+        </div>
+
+        <!-- HSV Frame -->
+        <div class="camera-frame">
+          <div class="frame-label">HSV</div>
+          <img id="hsv-frame" src="" alt="HSV Frame" />
+        </div>
+
+        <!-- Mask Frame -->
+        <div class="camera-frame">
+          <div class="frame-label">Mask</div>
+          <img id="mask-frame" src="" alt="Mask Frame" />
+        </div>
+
+        <!-- Result Frame -->
+        <div class="camera-frame">
+          <div class="frame-label">Result</div>
+          <img id="result-frame" src="" alt="Result Frame" />
+        </div>
+      </div>
+
+      <!-- Charts Panel - 3 Charts Vertical -->
+      <div class="charts-panel">
+        <!-- Error X Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <i class="fas fa-chart-line"></i>
+            <h3>Error X</h3>
           </div>
-          <div class="camera-frame main-frame">
-            <div class="frame-label">Main + Tracking</div>
-            <img id="original-frame" src="" alt="Original Frame" />
+          <div class="card-content">
+            <div class="chart-container">
+              <canvas id="errorChart"></canvas>
+            </div>
           </div>
         </div>
 
-        <!-- Processing Views -->
-        <div class="processing-views">
-          <div class="processing-frame">
-            <div class="frame-label">HSV</div>
-            <img id="hsv-frame" src="" alt="HSV Frame" />
+        <!-- Distance Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <i class="fas fa-ruler"></i>
+            <h3>Distance</h3>
           </div>
-          <div class="processing-frame">
-            <div class="frame-label">Mask</div>
-            <img id="mask-frame" src="" alt="Mask Frame" />
-          </div>
-          <div class="processing-frame">
-            <div class="frame-label">Result</div>
-            <img id="result-frame" src="" alt="Result Frame" />
+          <div class="card-content">
+            <div class="chart-container">
+              <canvas id="distanceChart"></canvas>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- Right Panel - Object Data -->
-      <aside class="right-panel">
-        <!-- Object Tracking Monitor -->
-        <div class="data-section">
-          <div class="section-header tracking-header">
-            <i class="fas fa-crosshairs"></i>
-            <h3>Object Data</h3>
+        <!-- PID Response Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <i class="fas fa-wave-square"></i>
+            <h3>PID Response</h3>
           </div>
-          <div class="section-content">
-            <div class="data-grid">
-              <div class="data-card position-x">
-                <div class="data-label">Position X</div>
+          <div class="card-content">
+            <div class="chart-container">
+              <canvas id="pidChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Panel - Switchable Data Panel -->
+      <div class="bottom-panel">
+        <!-- Tabs -->
+        <div class="data-tabs">
+          <button
+            class="data-tab active"
+            onclick="switchDataTab('object')"
+            id="object-tab"
+          >
+            <i class="fas fa-crosshairs"></i> Object Data
+          </button>
+          <button
+            class="data-tab"
+            onclick="switchDataTab('serial')"
+            id="serial-tab"
+          >
+            <i class="fas fa-terminal"></i> Serial Output
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="data-content">
+          <!-- Object Data Panel -->
+          <div class="tab-panel active" id="object-panel">
+            <div class="object-data-grid">
+              <div class="data-item position-x">
+                <div class="data-label">Pos X</div>
                 <div class="data-value" id="object-x">0</div>
-                <div class="data-unit">pixels</div>
+                <div class="data-unit">px</div>
               </div>
-              <div class="data-card position-y">
-                <div class="data-label">Position Y</div>
+              <div class="data-item position-y">
+                <div class="data-label">Pos Y</div>
                 <div class="data-value" id="object-y">0</div>
-                <div class="data-unit">pixels</div>
+                <div class="data-unit">px</div>
               </div>
-              <div class="data-card error-x">
-                <div class="data-label">Error X</div>
+              <div class="data-item error-x">
+                <div class="data-label">Err X</div>
                 <div class="data-value" id="error-x">0</div>
-                <div class="data-unit">pixels</div>
+                <div class="data-unit">px</div>
               </div>
-              <div class="data-card error-y">
-                <div class="data-label">Error Y</div>
+              <div class="data-item error-y">
+                <div class="data-label">Err Y</div>
                 <div class="data-value" id="error-y">0</div>
-                <div class="data-unit">pixels</div>
+                <div class="data-unit">px</div>
               </div>
-              <div class="data-card distance">
+              <div class="data-item distance">
                 <div class="data-label">Distance</div>
                 <div class="data-value" id="object-distance">0.0 cm</div>
-                <div class="data-unit">estimated</div>
+                <div class="data-unit">est</div>
               </div>
-              <div class="data-card area">
+              <div class="data-item area">
                 <div class="data-label">Area</div>
                 <div class="data-value" id="object-area">0 px</div>
-                <div class="data-unit">pixels²</div>
-              </div>
-            </div>
-
-            <!-- Status Indicators -->
-            <div class="status-indicators">
-              <div class="indicator-item">
-                <span>Object Detected</span>
-                <div class="indicator-dot" id="detection-indicator"></div>
-              </div>
-              <div class="indicator-item">
-                <span>System Active</span>
-                <div class="indicator-dot" id="system-indicator"></div>
-              </div>
-              <div class="indicator-item">
-                <span>Serial TX</span>
-                <div
-                  class="indicator-dot active"
-                  id="serial-tx-indicator"
-                ></div>
+                <div class="data-unit">px²</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Serial Data Monitor -->
-        <div class="data-section">
-          <div class="section-header info-header">
-            <i class="fas fa-terminal"></i>
-            <h3>Serial Output</h3>
-          </div>
-          <div class="section-content">
+          <!-- Serial Output Panel -->
+          <div class="tab-panel" id="serial-panel">
             <div
-              style="
-                background: #f8fafc;
-                padding: 1rem;
-                border-radius: 6px;
-                font-family: monospace;
-                font-size: 0.75rem;
-                min-height: 100px;
-                max-height: 200px;
-                overflow-y: auto;
-              "
+              class="serial-monitor"
               id="serial-monitor"
+              style="height: 100%"
             >
               Waiting for data...
             </div>
           </div>
         </div>
-      </aside>
+      </div>
     </main>
+
+    <!-- Calibration Modal -->
+    <div class="modal-overlay" id="calibration-modal">
+      <div class="calibration-modal">
+        <div class="calibration-main">
+          <div class="calibration-header">
+            <h2><i class="fas fa-sliders-h"></i>Advanced Calibration</h2>
+            <button class="close-modal" onclick="closeCalibrationModal()">
+              <i class="fas fa-times"></i>
+              Close
+            </button>
+          </div>
+          <div class="calibration-frames">
+            <div class="calibration-frame">
+              <div class="frame-label">Mask</div>
+              <img id="calibration-mask" src="" alt="Calibration Mask" />
+            </div>
+            <div class="calibration-frame">
+              <div class="frame-label">Result</div>
+              <img id="calibration-result" src="" alt="Calibration Result" />
+            </div>
+          </div>
+        </div>
+        <div class="calibration-controls">
+          <div class="calibration-tabs">
+            <button
+              class="calibration-tab active"
+              onclick="switchCalibrationTab('hsv')"
+            >
+              HSV Color
+            </button>
+            <button
+              class="calibration-tab"
+              onclick="switchCalibrationTab('morphology')"
+            >
+              Morphology
+            </button>
+            <button
+              class="calibration-tab"
+              onclick="switchCalibrationTab('distance')"
+            >
+              Distance
+            </button>
+            <button
+              class="calibration-tab"
+              onclick="switchCalibrationTab('pid')"
+            >
+              PID Tuning
+            </button>
+          </div>
+
+          <!-- HSV Color Tab -->
+          <div class="calibration-tab-content active" id="hsv-tab">
+            <h3>HSV Color Range</h3>
+
+            <div class="slider-group">
+              <label
+                >H Min
+                <span class="slider-value" id="h-min-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="h-min"
+                min="0"
+                max="179"
+                value="0"
+                oninput="updateCalibrationSlider('h_min', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >S Min
+                <span class="slider-value" id="s-min-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="s-min"
+                min="0"
+                max="255"
+                value="0"
+                oninput="updateCalibrationSlider('s_min', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >V Min
+                <span class="slider-value" id="v-min-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="v-min"
+                min="0"
+                max="255"
+                value="0"
+                oninput="updateCalibrationSlider('v_min', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >H Max
+                <span class="slider-value" id="h-max-value">179</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="h-max"
+                min="0"
+                max="179"
+                value="179"
+                oninput="updateCalibrationSlider('h_max', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >S Max
+                <span class="slider-value" id="s-max-value">255</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="s-max"
+                min="0"
+                max="255"
+                value="255"
+                oninput="updateCalibrationSlider('s_max', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >V Max
+                <span class="slider-value" id="v-max-value">255</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="v-max"
+                min="0"
+                max="255"
+                value="255"
+                oninput="updateCalibrationSlider('v_max', this.value)"
+              />
+            </div>
+          </div>
+
+          <!-- Morphology Tab -->
+          <div class="calibration-tab-content" id="morphology-tab">
+            <h3>Morphology Operations</h3>
+
+            <div class="slider-group">
+              <label
+                >Erosion
+                <span class="slider-value" id="erosion-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="erosion"
+                min="0"
+                max="10"
+                value="0"
+                oninput="updateCalibrationSlider('erosion', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Dilation
+                <span class="slider-value" id="dilation-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="dilation"
+                min="0"
+                max="10"
+                value="0"
+                oninput="updateCalibrationSlider('dilation', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Opening
+                <span class="slider-value" id="opening-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="opening"
+                min="0"
+                max="10"
+                value="0"
+                oninput="updateCalibrationSlider('opening', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Closing
+                <span class="slider-value" id="closing-value">0</span></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="closing"
+                min="0"
+                max="10"
+                value="0"
+                oninput="updateCalibrationSlider('closing', this.value)"
+              />
+            </div>
+          </div>
+
+          <!-- Distance Calibration Tab -->
+          <div class="calibration-tab-content" id="distance-tab">
+            <h3>Distance Calibration</h3>
+
+            <div class="slider-group">
+              <label
+                >Calib Distance (cm)
+                <span class="slider-value" id="calib-distance-value"
+                  >50</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="calib-distance"
+                min="10"
+                max="200"
+                value="50"
+                oninput="updateCalibrationSlider('calib_distance_cm', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Calib Pixel Area
+                <span class="slider-value" id="calib-pixel-area-value"
+                  >5000</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="calib-pixel-area"
+                min="100"
+                max="50000"
+                value="5000"
+                oninput="updateCalibrationSlider('calib_pixel_area', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Min Area Threshold
+                <span class="slider-value" id="min-area-threshold-value"
+                  >500</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="min-area-threshold"
+                min="50"
+                max="10000"
+                value="500"
+                oninput="updateCalibrationSlider('min_area_threshold', this.value)"
+              />
+            </div>
+          </div>
+
+          <!-- PID Tuning Tab -->
+          <div class="calibration-tab-content" id="pid-tab">
+            <h3>PID Fine Tuning</h3>
+
+            <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary)">
+              Distance PID:
+            </h4>
+            <div class="slider-group">
+              <label
+                >Kp Distance
+                <span class="slider-value" id="pid-kp-dist-value"
+                  >1.0</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-kp-dist"
+                min="0"
+                max="10"
+                step="0.1"
+                value="1.0"
+                oninput="updatePIDCalibration('kp_jarak', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Ki Distance
+                <span class="slider-value" id="pid-ki-dist-value"
+                  >0.1</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-ki-dist"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.1"
+                oninput="updatePIDCalibration('ki_jarak', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Kd Distance
+                <span class="slider-value" id="pid-kd-dist-value"
+                  >0.05</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-kd-dist"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.05"
+                oninput="updatePIDCalibration('kd_jarak', this.value)"
+              />
+            </div>
+
+            <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary)">
+              Direction PID:
+            </h4>
+            <div class="slider-group">
+              <label
+                >Kp Direction
+                <span class="slider-value" id="pid-kp-dir-value"
+                  >1.0</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-kp-dir"
+                min="0"
+                max="10"
+                step="0.1"
+                value="1.0"
+                oninput="updatePIDCalibration('kp_arahhadap', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Ki Direction
+                <span class="slider-value" id="pid-ki-dir-value"
+                  >0.1</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-ki-dir"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.1"
+                oninput="updatePIDCalibration('ki_arahhadap', this.value)"
+              />
+            </div>
+
+            <div class="slider-group">
+              <label
+                >Kd Direction
+                <span class="slider-value" id="pid-kd-dir-value"
+                  >0.05</span
+                ></label
+              >
+              <input
+                type="range"
+                class="slider"
+                id="pid-kd-dir"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.05"
+                oninput="updatePIDCalibration('kd_arahhadap', this.value)"
+              />
+            </div>
+          </div>
+
+          <div style="margin-top: 2rem">
+            <button
+              class="btn btn-primary"
+              style="width: 100%"
+              onclick="saveCalibrationSettings()"
+            >
+              <i class="fas fa-save"></i>Save All Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
     <script>
-      class SimplifiedControlApp {
+      class ProfessionalControlApp {
         constructor() {
           this.isRunning = false;
           this.intervalId = null;
           this.dataIntervalId = null;
+          this.calibrationIntervalId = null;
+          this.chartUpdateInterval = null;
           this.controlMode = "manual";
           this.lastKeyPressed = "none";
+          this.calibrationOpen = false;
+
+          this.maxDataPoints = 2000; // 20 seconds * 100 samples/sec
+          this.errorData = [];
+          this.distanceData = [];
+          this.pidDistanceData = [];
+          this.pidDirectionData = [];
+          this.timeLabels = [];
+
+          // Real-time monitoring setup (Arduino Serial Plotter style)
+          this.samplingInterval = 10; // 10ms = 100 samples/sec
+          this.displayWindow = 20000; // 20 seconds in milliseconds
+          this.startTime = Date.now();
+
+          // PID variables for both controllers (matching Arduino serialCommand.ino)
+          this.pidDistanceIntegral = 0;
+          this.pidDirectionIntegral = 0;
+          this.pidDistanceLastError = 0;
+          this.pidDirectionLastError = 0;
+          this.lastPidTime = Date.now(); // Initialize PID timing like Arduino setup()
+
           this.pidParams = {
             setpoint_jarak: 50.0,
             kp_jarak: 1.0,
@@ -1102,6 +2109,31 @@
             kd_arahhadap: 0.05,
           };
 
+          this.calibrationValues = {
+            h_min: 0,
+            s_min: 0,
+            v_min: 0,
+            h_max: 179,
+            s_max: 255,
+            v_max: 255,
+            erosion: 0,
+            dilation: 0,
+            opening: 0,
+            closing: 0,
+            calib_distance_cm: 50,
+            calib_pixel_area: 5000,
+            min_area_threshold: 500,
+          };
+
+          this.currentObjectData = {
+            x: 0,
+            y: 0,
+            distance: 0,
+            error_x: 0,
+            error_y: 0,
+            area: 0,
+          };
+
           this.init();
         }
 
@@ -1109,13 +2141,417 @@
           this.loadInitialValues();
           this.updateStatusIndicator("connecting", "Initializing...");
           this.setupKeyboardListener();
-          console.log("Simplified Control App initialized");
+          this.setupCharts();
+          console.log("Professional Control App initialized");
+        }
+
+        setupCharts() {
+          const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false, // Disable animations for real-time performance
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false }, // Disable tooltips for performance
+            },
+            scales: {
+              x: {
+                display: true,
+                type: "linear",
+                title: {
+                  display: true,
+                  text: "Time (s)",
+                  color: "#94a3b8",
+                },
+                grid: { color: "rgba(100, 116, 139, 0.2)" },
+                ticks: { color: "#94a3b8", maxTicksLimit: 6 },
+              },
+              y: {
+                grid: { color: "rgba(100, 116, 139, 0.3)" },
+                ticks: { color: "#94a3b8", maxTicksLimit: 5 },
+              },
+            },
+            elements: {
+              point: { radius: 0 },
+              line: { borderWidth: 1.5 },
+            },
+            interaction: { intersect: false },
+          };
+
+          // Error X Chart
+          const errorCtx = document
+            .getElementById("errorChart")
+            .getContext("2d");
+          this.errorChart = new Chart(errorCtx, {
+            type: "line",
+            data: {
+              labels: this.timeLabels,
+              datasets: [
+                {
+                  label: "Error X (pixels)",
+                  data: this.errorData,
+                  borderColor: "#ef4444",
+                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  tension: 0.4,
+                  pointRadius: 0,
+                },
+              ],
+            },
+            options: chartOptions,
+          });
+
+          // Distance Chart
+          const distanceCtx = document
+            .getElementById("distanceChart")
+            .getContext("2d");
+          this.distanceChart = new Chart(distanceCtx, {
+            type: "line",
+            data: {
+              labels: this.timeLabels,
+              datasets: [
+                {
+                  label: "Distance (cm)",
+                  data: this.distanceData,
+                  borderColor: "#8b5cf6",
+                  backgroundColor: "rgba(139, 92, 246, 0.1)",
+                  tension: 0.4,
+                  pointRadius: 0,
+                },
+                {
+                  label: "Setpoint",
+                  data: [],
+                  borderColor: "#10b981",
+                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                  borderDash: [5, 5],
+                  tension: 0,
+                  pointRadius: 0,
+                },
+              ],
+            },
+            options: {
+              ...chartOptions,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: "top",
+                  labels: { color: "#94a3b8" },
+                },
+              },
+            },
+          });
+
+          // PID Response Chart (Dual PID)
+          const pidChartOptions = {
+            ...chartOptions,
+            plugins: { 
+              legend: { 
+                display: true,
+                position: 'top',
+                labels: {
+                  color: '#94a3b8',
+                  font: { size: 10 },
+                  usePointStyle: true,
+                  pointStyle: 'line'
+                }
+              },
+              tooltip: { enabled: false }
+            }
+          };
+          
+          const pidCtx = document.getElementById("pidChart").getContext("2d");
+          this.pidChart = new Chart(pidCtx, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: "PID Distance",
+                  data: [],
+                  borderColor: "#f59e0b",
+                  backgroundColor: "rgba(245, 158, 11, 0.1)",
+                  showLine: true,
+                  tension: 0.1,
+                  pointRadius: 0,
+                },
+                {
+                  label: "PID Direction",
+                  data: [],
+                  borderColor: "#8b5cf6",
+                  backgroundColor: "rgba(139, 92, 246, 0.1)",
+                  showLine: true,
+                  tension: 0.1,
+                  pointRadius: 0,
+                },
+              ],
+            },
+            options: pidChartOptions,
+          });
+        }
+
+        updateCharts() {
+          const currentTime = Date.now();
+          const relativeTime = ((currentTime - this.startTime) / 1000).toFixed(
+            2
+          ); // seconds with 2 decimal places
+
+          // Always acquire new data (continuous monitoring)
+          this.errorData.push(this.currentObjectData.error_x);
+          this.distanceData.push(this.currentObjectData.distance);
+          this.timeLabels.push(parseFloat(relativeTime));
+
+          // PID calculations matching serialCommand.ino
+          const currentTimeMs = Date.now();
+          const timeChange = currentTimeMs - (this.lastPidTime || currentTimeMs);
+          
+          if (timeChange >= 50) { // 50ms sample time like Arduino (20Hz)
+            
+            // PID Distance (Jarak) - matches Arduino implementation
+            const distanceError = this.pidParams.setpoint_jarak - this.currentObjectData.distance;
+            
+            // Check distance tolerance (±10cm like Arduino)
+            const distanceInTolerance = Math.abs(distanceError) <= 10.0;
+            
+            if (!distanceInTolerance) {
+              this.pidDistanceIntegral += distanceError * timeChange;
+              
+              // Anti-windup (limit integral like Arduino)
+              const maxIntegral = 500.0;
+              if (this.pidDistanceIntegral > maxIntegral) this.pidDistanceIntegral = maxIntegral;
+              else if (this.pidDistanceIntegral < -maxIntegral) this.pidDistanceIntegral = -maxIntegral;
+              
+              const distanceDerivative = (distanceError - this.pidDistanceLastError) / timeChange;
+              
+              let pidDistanceOutput = 
+                (this.pidParams.kp_jarak * distanceError) +
+                (this.pidParams.ki_jarak * this.pidDistanceIntegral) +
+                (this.pidParams.kd_jarak * distanceDerivative);
+              
+              // Constrain to Arduino limits: ±600
+              if (pidDistanceOutput > 600) pidDistanceOutput = 600;
+              else if (pidDistanceOutput < -600) pidDistanceOutput = -600;
+              
+              this.pidDistanceData.push(pidDistanceOutput);
+              this.pidDistanceLastError = distanceError;
+            } else {
+              this.pidDistanceData.push(0);
+              this.pidDistanceIntegral = 0; // Reset integral in tolerance zone
+            }
+            
+            // PID Direction (Arah Hadap) - using error_x, target = 0
+            const directionError = 0 - this.currentObjectData.error_x; // Arduino: setpoint - input
+            
+            // Check direction tolerance (±20px like Arduino)
+            const directionInTolerance = Math.abs(this.currentObjectData.error_x) <= 20.0;
+            
+            if (!directionInTolerance) {
+              this.pidDirectionIntegral += directionError * timeChange;
+              
+              // Anti-windup (limit integral like Arduino)
+              const maxIntegral = 1000.0;
+              if (this.pidDirectionIntegral > maxIntegral) this.pidDirectionIntegral = maxIntegral;
+              else if (this.pidDirectionIntegral < -maxIntegral) this.pidDirectionIntegral = -maxIntegral;
+              
+              const directionDerivative = (directionError - this.pidDirectionLastError) / timeChange;
+              
+              let pidDirectionOutput = 
+                (this.pidParams.kp_arahhadap * directionError) +
+                (this.pidParams.ki_arahhadap * this.pidDirectionIntegral) +
+                (this.pidParams.kd_arahhadap * directionDerivative);
+              
+              // Constrain to Arduino limits: ±100
+              if (pidDirectionOutput > 100) pidDirectionOutput = 100;
+              else if (pidDirectionOutput < -100) pidDirectionOutput = -100;
+              
+              this.pidDirectionData.push(pidDirectionOutput);
+              this.pidDirectionLastError = directionError;
+            } else {
+              this.pidDirectionData.push(0);
+              this.pidDirectionIntegral = 0; // Reset integral in tolerance zone
+            }
+            
+            this.lastPidTime = currentTimeMs;
+          } else {
+            // Keep last values if not time to update PID
+            this.pidDistanceData.push(this.pidDistanceData[this.pidDistanceData.length - 1] || 0);
+            this.pidDirectionData.push(this.pidDirectionData[this.pidDirectionData.length - 1] || 0);
+          }
+
+          // FIFO: Keep only last 20 seconds of data (rolling window)
+          const currentTimeSeconds = parseFloat(relativeTime);
+          const windowStart = currentTimeSeconds - 20; // 20 seconds ago
+
+          // Remove old data points (FIFO - First In First Out)
+          while (
+            this.timeLabels.length > 0 &&
+            this.timeLabels[0] < windowStart
+          ) {
+            this.timeLabels.shift();
+            this.errorData.shift();
+            this.distanceData.shift();
+            this.pidDistanceData.shift();
+            this.pidDirectionData.shift();
+          }
+
+          // Dynamic X-axis scaling (always show 20-second window)
+          const minTime = Math.max(0, currentTimeSeconds - 20);
+          const maxTime = currentTimeSeconds;
+
+          // Update chart scales
+          this.errorChart.options.scales.x.min = minTime;
+          this.errorChart.options.scales.x.max = maxTime;
+          this.distanceChart.options.scales.x.min = minTime;
+          this.distanceChart.options.scales.x.max = maxTime;
+          this.pidChart.options.scales.x.min = minTime;
+          this.pidChart.options.scales.x.max = maxTime;
+
+          // Update chart data with time-based points
+          const errorPoints = this.timeLabels.map((time, index) => ({
+            x: time,
+            y: this.errorData[index],
+          }));
+          this.errorChart.data.datasets[0].data = errorPoints;
+
+          const distancePoints = this.timeLabels.map((time, index) => ({
+            x: time,
+            y: this.distanceData[index],
+          }));
+          const setpointPoints = this.timeLabels.map((time) => ({
+            x: time,
+            y: this.pidParams.setpoint_jarak,
+          }));
+          this.distanceChart.data.datasets[0].data = distancePoints;
+          this.distanceChart.data.datasets[1].data = setpointPoints;
+
+          const pidDistancePoints = this.timeLabels.map((time, index) => ({
+            x: time,
+            y: this.pidDistanceData[index],
+          }));
+          const pidDirectionPoints = this.timeLabels.map((time, index) => ({
+            x: time,
+            y: this.pidDirectionData[index],
+          }));
+          this.pidChart.data.datasets[0].data = pidDistancePoints;
+          this.pidChart.data.datasets[1].data = pidDirectionPoints;
+
+          // Real-time updates (no animation for smooth performance)
+          this.errorChart.update("none");
+          this.distanceChart.update("none");
+          this.pidChart.update("none");
+        }
+
+        updateRobotSimulation() {
+          // Update both simulations (control panel and any other)
+          const leftWheel = document.getElementById("left-wheel") || document.getElementById("left-wheel-ctrl");
+          const rightWheel = document.getElementById("right-wheel") || document.getElementById("right-wheel-ctrl");
+          const robotDirection = document.getElementById("robot-direction") || document.getElementById("robot-direction-ctrl");
+          const leftSpeedFill = document.getElementById("left-speed") || document.getElementById("left-speed-ctrl");
+          const rightSpeedFill = document.getElementById("right-speed") || document.getElementById("right-speed-ctrl");
+          const leftSpeedText = document.getElementById("left-speed-text") || document.getElementById("left-speed-text-ctrl");
+          const rightSpeedText = document.getElementById("right-speed-text") || document.getElementById("right-speed-text-ctrl");
+
+          let leftSpeed = 0,
+            rightSpeed = 0,
+            direction = "⬆️";
+
+          if (this.controlMode === "manual") {
+            switch (this.lastKeyPressed) {
+              case "w":
+                leftSpeed = rightSpeed = 80;
+                direction = "⬆️";
+                break;
+              case "s":
+                leftSpeed = rightSpeed = -80;
+                direction = "⬇️";
+                break;
+              case "a":
+                leftSpeed = -60;
+                rightSpeed = 60;
+                direction = "↰";
+                break;
+              case "d":
+                leftSpeed = 60;
+                rightSpeed = -60;
+                direction = "↱";
+                break;
+              default:
+                leftSpeed = rightSpeed = 0;
+                direction = "⏸️";
+            }
+          } else {
+            const errorX = this.currentObjectData.error_x;
+            const distance = this.currentObjectData.distance;
+            const setpoint = this.pidParams.setpoint_jarak;
+
+            if (this.currentObjectData.area > 0) {
+              const distanceError = setpoint - distance;
+              const baseSpeed = Math.min(Math.abs(distanceError) * 2, 80);
+              const turnRate = Math.min(Math.abs(errorX) * 0.5, 40);
+
+              if (Math.abs(distanceError) > 5) {
+                if (distanceError > 0) {
+                  leftSpeed = rightSpeed = baseSpeed;
+                  direction = "⬆️";
+                } else {
+                  leftSpeed = rightSpeed = -baseSpeed;
+                  direction = "⬇️";
+                }
+              }
+
+              if (Math.abs(errorX) > 10) {
+                if (errorX > 0) {
+                  leftSpeed += turnRate;
+                  rightSpeed -= turnRate;
+                  direction = distance > setpoint ? "↗️" : "↘️";
+                } else {
+                  leftSpeed -= turnRate;
+                  rightSpeed += turnRate;
+                  direction = distance > setpoint ? "↖️" : "↙️";
+                }
+              }
+            }
+          }
+
+          this.updateWheel(leftWheel, leftSpeed);
+          this.updateWheel(rightWheel, rightSpeed);
+
+          robotDirection.textContent = direction;
+
+          const leftPercent = Math.abs(leftSpeed);
+          const rightPercent = Math.abs(rightSpeed);
+
+          leftSpeedFill.style.width = `${leftPercent}%`;
+          rightSpeedFill.style.width = `${rightPercent}%`;
+          leftSpeedText.textContent = `${Math.round(leftPercent)}%`;
+          rightSpeedText.textContent = `${Math.round(rightPercent)}%`;
+
+          leftSpeedFill.style.background =
+            leftSpeed >= 0 ? "#10b981" : "#ef4444";
+          rightSpeedFill.style.background =
+            rightSpeed >= 0 ? "#10b981" : "#ef4444";
+        }
+
+        updateWheel(wheelElement, speed) {
+          wheelElement.classList.remove(
+            "active",
+            "inactive",
+            "forward",
+            "backward"
+          );
+
+          if (Math.abs(speed) < 5) {
+            wheelElement.classList.add("inactive");
+          } else {
+            wheelElement.classList.add("active");
+            wheelElement.classList.add(speed > 0 ? "forward" : "backward");
+          }
         }
 
         setupKeyboardListener() {
-          // FIXED: Send key presses to backend
           document.addEventListener("keydown", (e) => {
-            if (this.controlMode === "manual" && this.isRunning) {
+            if (
+              this.controlMode === "manual" &&
+              this.isRunning &&
+              !this.calibrationOpen
+            ) {
               const key = e.key.toLowerCase();
               if (["w", "a", "s", "d"].includes(key)) {
                 e.preventDefault();
@@ -1123,14 +2559,17 @@
                   this.lastKeyPressed = key;
                   this.updateKeyDisplay();
                   this.sendKeyToBackend(key);
-                  console.log(`Last key pressed: ${key.toUpperCase()}`);
                 }
               }
             }
           });
 
           document.addEventListener("keyup", (e) => {
-            if (this.controlMode === "manual" && this.isRunning) {
+            if (
+              this.controlMode === "manual" &&
+              this.isRunning &&
+              !this.calibrationOpen
+            ) {
               const key = e.key.toLowerCase();
               if (["w", "a", "s", "d"].includes(key)) {
                 e.preventDefault();
@@ -1138,16 +2577,12 @@
                   this.lastKeyPressed = "none";
                   this.updateKeyDisplay();
                   this.sendKeyToBackend("none");
-                  console.log(
-                    `Key ${key.toUpperCase()} released - set to none`
-                  );
                 }
               }
             }
           });
         }
 
-        // NEW: Send key state to backend
         async sendKeyToBackend(key) {
           try {
             await fetch("/update_last_key", {
@@ -1160,25 +2595,18 @@
           }
         }
 
-        // Update key display for last key only
         updateKeyDisplay() {
-          // Clear all active states
           ["w", "a", "s", "d"].forEach((key) => {
-            const element = document.getElementById(`key-${key}`);
-            element.classList.remove("current");
+            document.getElementById(`key-${key}`).classList.remove("current");
           });
 
-          // Set current key if not none
           if (this.lastKeyPressed !== "none") {
             const element = document.getElementById(
               `key-${this.lastKeyPressed}`
             );
-            if (element) {
-              element.classList.add("current");
-            }
+            if (element) element.classList.add("current");
           }
 
-          // Update last key display
           const lastKeyDisplay = document.getElementById("last-key-value");
           if (this.lastKeyPressed === "none") {
             lastKeyDisplay.textContent = "NONE";
@@ -1199,15 +2627,32 @@
             this.lastKeyPressed = data.last_key_pressed || "none";
 
             this.updateAllControls();
-            console.log("Initial values loaded:", data);
           } catch (error) {
             console.error("Error loading initial values:", error);
             this.showToast("Error loading initial values", "error");
           }
         }
 
+        async loadCalibrationValues() {
+          try {
+            const response = await fetch("/get_calibration_values");
+            const data = await response.json();
+
+            if (!data.error) {
+              Object.keys(this.calibrationValues).forEach((key) => {
+                if (data[key] !== undefined) {
+                  this.calibrationValues[key] = data[key];
+                }
+              });
+              this.updateCalibrationSliders();
+              this.updatePIDCalibrationSliders();
+            }
+          } catch (error) {
+            console.error("Error loading calibration values:", error);
+          }
+        }
+
         updateAllControls() {
-          // Update mode buttons
           document
             .getElementById("manual-mode-btn")
             .classList.toggle("active", this.controlMode === "manual");
@@ -1217,13 +2662,11 @@
           document.getElementById("current-mode").textContent =
             this.controlMode === "manual" ? "Manual" : "Auto PID";
 
-          // Show/hide sections
           document.getElementById("manual-section").style.display =
             this.controlMode === "manual" ? "block" : "none";
           document.getElementById("auto-section").style.display =
             this.controlMode === "auto" ? "block" : "none";
 
-          // Update PID values
           Object.entries(this.pidParams).forEach(([key, value]) => {
             const element = document.getElementById(key.replace("_", "-"));
             if (element) {
@@ -1237,6 +2680,175 @@
           this.updateKeyDisplay();
         }
 
+        updateCalibrationSliders() {
+          Object.entries(this.calibrationValues).forEach(([key, value]) => {
+            const slider = document.getElementById(key.replace("_", "-"));
+            const valueSpan = document.getElementById(
+              key.replace("_", "-") + "-value"
+            );
+
+            if (slider) slider.value = value;
+            if (valueSpan) valueSpan.textContent = value;
+          });
+        }
+
+        updatePIDCalibrationSliders() {
+          const pidMappings = {
+            kp_jarak: "pid-kp-dist",
+            ki_jarak: "pid-ki-dist",
+            kd_jarak: "pid-kd-dist",
+            kp_arahhadap: "pid-kp-dir",
+            ki_arahhadap: "pid-ki-dir",
+            kd_arahhadap: "pid-kd-dir",
+          };
+
+          Object.entries(pidMappings).forEach(([paramKey, sliderId]) => {
+            const slider = document.getElementById(sliderId);
+            const valueSpan = document.getElementById(sliderId + "-value");
+
+            if (slider && this.pidParams[paramKey] !== undefined) {
+              slider.value = this.pidParams[paramKey];
+            }
+            if (valueSpan) {
+              valueSpan.textContent = this.pidParams[paramKey] || "0";
+            }
+          });
+        }
+
+        openCalibrationModal() {
+          this.calibrationOpen = true;
+          document.getElementById("calibration-modal").classList.add("show");
+
+          this.loadCalibrationValues();
+
+          this.calibrationIntervalId = setInterval(() => {
+            this.fetchCalibrationFrames();
+          }, 200);
+
+          this.showToast("Advanced calibration mode opened", "info");
+        }
+
+        closeCalibrationModal() {
+          this.calibrationOpen = false;
+          document.getElementById("calibration-modal").classList.remove("show");
+
+          if (this.calibrationIntervalId) {
+            clearInterval(this.calibrationIntervalId);
+            this.calibrationIntervalId = null;
+          }
+
+          this.showToast("Calibration mode closed", "info");
+        }
+
+        async fetchCalibrationFrames() {
+          if (!this.calibrationOpen) return;
+
+          try {
+            const response = await fetch("/get_calibration_frames");
+            const data = await response.json();
+
+            if (!data.error) {
+              const maskImg = document.getElementById("calibration-mask");
+              const resultImg = document.getElementById("calibration-result");
+
+              if (maskImg && data.mask) maskImg.src = data.mask;
+              if (resultImg && data.result) resultImg.src = data.result;
+            }
+          } catch (error) {
+            console.error("Error fetching calibration frames:", error);
+          }
+        }
+
+        async updateCalibrationSlider(param, value) {
+          this.calibrationValues[param] = parseInt(value);
+
+          const valueSpan = document.getElementById(
+            param.replace("_", "-") + "-value"
+          );
+          if (valueSpan) valueSpan.textContent = value;
+
+          try {
+            await fetch("/update_calibration_values", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ [param]: parseInt(value) }),
+            });
+          } catch (error) {
+            console.error("Error updating calibration value:", error);
+          }
+        }
+
+        async updatePIDCalibration(param, value) {
+          this.pidParams[param] = parseFloat(value);
+
+          const pidMappings = {
+            kp_jarak: "pid-kp-dist",
+            ki_jarak: "pid-ki-dist",
+            kd_jarak: "pid-kd-dist",
+            kp_arahhadap: "pid-kp-dir",
+            ki_arahhadap: "pid-ki-dir",
+            kd_arahhadap: "pid-kd-dir",
+          };
+
+          const sliderId = pidMappings[param];
+          if (sliderId) {
+            const valueSpan = document.getElementById(sliderId + "-value");
+            if (valueSpan) valueSpan.textContent = value;
+          }
+
+          const mainElement = document.getElementById(param.replace("_", "-"));
+          if (mainElement) mainElement.value = value;
+
+          try {
+            await fetch("/update_pid_params", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ [param]: parseFloat(value) }),
+            });
+          } catch (error) {
+            console.error("Error updating PID parameter:", error);
+          }
+        }
+
+        async saveCalibrationSettings() {
+          const saveBtn = document.querySelector(
+            'button[onclick="saveCalibrationSettings()"]'
+          );
+          const originalHTML = saveBtn.innerHTML;
+
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Saving...';
+          saveBtn.disabled = true;
+
+          try {
+            const response = await fetch("/save_calibration", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+              this.showToast(
+                "All calibration settings saved successfully!",
+                "success"
+              );
+            } else {
+              this.showToast(
+                "Error saving calibration: " + result.message,
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error saving calibration:", error);
+            this.showToast("Error saving calibration", "error");
+          } finally {
+            setTimeout(() => {
+              saveBtn.innerHTML = originalHTML;
+              saveBtn.disabled = false;
+            }, 1000);
+          }
+        }
+
         async startSystem() {
           if (!this.isRunning) {
             this.isRunning = true;
@@ -1246,20 +2858,21 @@
             const stopBtn = document.getElementById("stop-btn");
             const systemIndicator = document.getElementById("system-indicator");
 
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            systemIndicator.classList.add("active");
+            if (startBtn) startBtn.disabled = true;
+            if (stopBtn) stopBtn.disabled = false;
+            if (systemIndicator) systemIndicator.classList.add("active");
 
-            // Start frame updates
             this.intervalId = setInterval(() => this.fetchFrames(), 100);
-            // Start object data updates
             this.dataIntervalId = setInterval(
               () => this.fetchObjectData(),
               200
             );
+            this.chartUpdateInterval = setInterval(() => {
+              this.updateCharts(); // Always update for real-time monitoring
+              this.updateRobotSimulation();
+            }, this.samplingInterval);
 
             this.showToast("System started successfully", "success");
-            console.log("System started in", this.controlMode, "mode");
           }
         }
 
@@ -1269,6 +2882,7 @@
 
             clearInterval(this.intervalId);
             clearInterval(this.dataIntervalId);
+            clearInterval(this.chartUpdateInterval);
 
             this.updateStatusIndicator("disconnected", "System Stopped");
 
@@ -1280,13 +2894,11 @@
             stopBtn.disabled = true;
             systemIndicator.classList.remove("active");
 
-            // Clear all frames
             ["original", "hsv", "mask", "result"].forEach((frameType) => {
               const img = document.getElementById(frameType + "-frame");
               if (img) img.src = "";
             });
 
-            // Reset displays
             this.updateObjectDataDisplay({
               x: 0,
               y: 0,
@@ -1296,7 +2908,6 @@
               area: 0,
             });
 
-            // Reset last key
             this.lastKeyPressed = "none";
             this.updateKeyDisplay();
             this.sendKeyToBackend("none");
@@ -1315,20 +2926,15 @@
             const data = await response.json();
 
             if (data.error) {
-              console.error("Frame fetch error:", data.error);
               this.updateStatusIndicator("disconnected", "Camera Error");
               return;
             }
 
-            // Update frame images
             Object.entries(data).forEach(([frameType, frameData]) => {
               const imgElement = document.getElementById(frameType + "-frame");
-              if (imgElement && frameData) {
-                imgElement.src = frameData;
-              }
+              if (imgElement && frameData) imgElement.src = frameData;
             });
           } catch (error) {
-            console.error("Error fetching frames:", error);
             this.updateStatusIndicator("disconnected", "Connection Error");
           }
         }
@@ -1340,6 +2946,7 @@
             const response = await fetch("/get_all_values");
             const data = await response.json();
 
+            this.currentObjectData = data.object_data;
             this.updateObjectDataDisplay(data.object_data);
             this.updateSerialMonitor(data.object_data);
           } catch (error) {
@@ -1348,7 +2955,6 @@
         }
 
         updateObjectDataDisplay(data) {
-          // Update data values
           document.getElementById("object-x").textContent = data.x || 0;
           document.getElementById("object-y").textContent = data.y || 0;
           document.getElementById("error-x").textContent =
@@ -1362,7 +2968,6 @@
             data.area || 0
           } px`;
 
-          // Update detection indicator
           const detectionIndicator = document.getElementById(
             "detection-indicator"
           );
@@ -1375,7 +2980,6 @@
 
         updateSerialMonitor(data) {
           const monitor = document.getElementById("serial-monitor");
-
           const serialData = `{${data.error_x || 0},${data.error_y || 0},${(
             data.distance || 0
           ).toFixed(1)},${data.area || 0},${this.controlMode},${
@@ -1385,16 +2989,14 @@
           },${this.pidParams.kd_jarak},${this.pidParams.kp_arahhadap},${
             this.pidParams.ki_arahhadap
           },${this.pidParams.kd_arahhadap}}`;
-
           const timestamp = new Date().toLocaleTimeString();
           const line = `[${timestamp}] ${serialData}\n`;
 
           monitor.textContent = line + monitor.textContent;
 
-          // Keep only last 10 lines
           const lines = monitor.textContent.split("\n");
-          if (lines.length > 10) {
-            monitor.textContent = lines.slice(0, 10).join("\n");
+          if (lines.length > 8) {
+            monitor.textContent = lines.slice(0, 8).join("\n");
           }
         }
 
@@ -1422,7 +3024,6 @@
               );
             }
           } catch (error) {
-            console.error("Error saving configuration:", error);
             this.showToast("Error saving configuration", "error");
           } finally {
             setTimeout(() => {
@@ -1433,18 +3034,11 @@
         }
 
         resetToDefault() {
-          if (
-            !confirm("Are you sure you want to reset all values to default?")
-          ) {
+          if (!confirm("Are you sure you want to reset all values to default?"))
             return;
-          }
 
-          // Stop system first
-          if (this.isRunning) {
-            this.stopSystem();
-          }
+          if (this.isRunning) this.stopSystem();
 
-          // Reset to defaults
           this.controlMode = "manual";
           this.pidParams = {
             setpoint_jarak: 50.0,
@@ -1457,6 +3051,17 @@
           };
           this.lastKeyPressed = "none";
 
+          this.errorData = [];
+          this.distanceData = [];
+          this.pidDistanceData = [];
+          this.pidDirectionData = [];
+          this.timeLabels = [];
+          this.pidDistanceIntegral = 0;
+          this.pidDirectionIntegral = 0;
+          this.pidDistanceLastError = 0;
+          this.pidDirectionLastError = 0;
+          this.lastPidTime = Date.now(); // Reset PID timing like Arduino resetPID()
+
           this.updateAllControls();
           this.sendKeyToBackend("none");
           this.showToast("All values reset to default", "info");
@@ -1467,7 +3072,6 @@
           const statusText = document.getElementById("status-text");
 
           indicator.className = "status-dot";
-
           switch (status) {
             case "connected":
               indicator.classList.add("connected");
@@ -1475,16 +3079,12 @@
             case "disconnected":
               indicator.classList.add("disconnected");
               break;
-            case "connecting":
-              break; // Default yellow
           }
-
           statusText.textContent = text;
         }
 
         showToast(message, type = "info") {
           const container = document.getElementById("toast-container");
-
           const icons = {
             success: "fa-check-circle",
             error: "fa-exclamation-circle",
@@ -1495,40 +3095,41 @@
           const toast = document.createElement("div");
           toast.className = `toast ${type}`;
           toast.innerHTML = `
-            <div class="toast-icon">
-                <i class="fas ${icons[type]}"></i>
-            </div>
-            <div class="toast-content">
-                <div class="toast-message">${message}</div>
-            </div>
-            <button class="toast-close" onclick="this.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
+            <div class="toast-icon"><i class="fas ${icons[type]}"></i></div>
+            <div class="toast-content"><div class="toast-message">${message}</div></div>
+            <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
           `;
 
           container.appendChild(toast);
-
-          setTimeout(() => {
-            toast.classList.add("show");
-          }, 100);
-
+          setTimeout(() => toast.classList.add("show"), 100);
           setTimeout(() => {
             toast.classList.remove("show");
             setTimeout(() => {
-              if (toast.parentNode) {
-                toast.remove();
-              }
+              if (toast.parentNode) toast.remove();
             }, 300);
           }, 4000);
         }
       }
 
-      // Global functions for HTML onclick events
       let app;
+
+      function switchCalibrationTab(tabType) {
+        document
+          .querySelectorAll(".calibration-tab")
+          .forEach((tab) => tab.classList.remove("active"));
+        document
+          .querySelectorAll(".calibration-tab-content")
+          .forEach((content) => content.classList.remove("active"));
+
+        document
+          .querySelector(`[onclick="switchCalibrationTab('${tabType}')"]`)
+          .classList.add("active");
+        document.getElementById(`${tabType}-tab`).classList.add("active");
+      }
 
       function setControlMode(mode) {
         app.controlMode = mode;
-        app.lastKeyPressed = "none"; // Reset key when switching modes
+        app.lastKeyPressed = "none";
         app.updateAllControls();
         app.sendKeyToBackend("none");
 
@@ -1543,11 +3144,10 @@
 
       function updatePIDParam(param, value) {
         app.pidParams[param] = parseFloat(value);
-
         if (param === "setpoint_jarak") {
           document.getElementById("setpoint-value").textContent = value;
         }
-
+        app.updatePIDCalibrationSliders();
         fetch("/update_pid_params", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1557,10 +3157,7 @@
 
       function updateCameraControl(param, value) {
         const valueSpan = document.getElementById(param + "-value");
-        if (valueSpan) {
-          valueSpan.textContent = value;
-        }
-
+        if (valueSpan) valueSpan.textContent = value;
         fetch("/update_camera_controls", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1568,33 +3165,54 @@
         });
       }
 
+      function updateCalibrationSlider(param, value) {
+        app.updateCalibrationSlider(param, value);
+      }
+
+      function updatePIDCalibration(param, value) {
+        app.updatePIDCalibration(param, value);
+      }
+
+      function openCalibrationModal() {
+        app.openCalibrationModal();
+      }
+      function closeCalibrationModal() {
+        app.closeCalibrationModal();
+      }
+      function saveCalibrationSettings() {
+        app.saveCalibrationSettings();
+      }
       function startSystem() {
         app.startSystem();
       }
-
       function stopSystem() {
         app.stopSystem();
       }
-
       function saveConfiguration() {
         app.saveConfiguration();
       }
-
       function resetToDefault() {
         app.resetToDefault();
       }
 
-      // Initialize application when DOM is loaded
+      function switchDataTab(tabType) {
+        // Remove active class from all tabs and panels
+        document
+          .querySelectorAll(".data-tab")
+          .forEach((tab) => tab.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((panel) => panel.classList.remove("active"));
+
+        // Add active class to clicked tab and corresponding panel
+        document.getElementById(tabType + "-tab").classList.add("active");
+        document.getElementById(tabType + "-panel").classList.add("active");
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
-        console.log("DOM loaded, initializing Simplified Control App...");
-        app = new SimplifiedControlApp();
+        app = new ProfessionalControlApp();
+        setTimeout(() => app.startSystem(), 1000);
 
-        // Auto-start system after 1 second
-        setTimeout(() => {
-          app.startSystem();
-        }, 1000);
-
-        // Handle page unload
         window.addEventListener("beforeunload", function (event) {
           if (app.isRunning) {
             event.preventDefault();
@@ -1604,7 +3222,6 @@
           }
         });
 
-        // Add focus indicator for keyboard controls
         window.addEventListener("focus", () => {
           if (app.controlMode === "manual" && app.isRunning) {
             app.showToast("Keyboard controls active (WASD)", "info");
