@@ -8,6 +8,8 @@ import serial
 import time
 import os
 from threading import Lock
+from zeroconf import ServiceInfo, Zeroconf
+import socket
 
 app = Flask(__name__)
 
@@ -115,6 +117,7 @@ object_data = {
 }
 camera_lock = Lock()
 serial_port = None
+zeroconf = None
 
 # Initialize serial connection
 def initialize_serial():
@@ -125,6 +128,58 @@ def initialize_serial():
     except Exception as e:
         print(f"❌ Serial connection failed: {e}")
         serial_port = None
+
+def get_local_ip():
+    """Get the actual local network IP address"""
+    try:
+        # Connect to a remote address to determine which local IP to use
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("1.1.1.1", 80))
+            return s.getsockname()[0]
+    except Exception:
+        try:
+            # Fallback method
+            hostname = socket.gethostname()
+            return socket.gethostbyname(hostname)
+        except Exception:
+            return "127.0.0.1"
+
+def register_mdns_service():
+    global zeroconf
+    try:
+        zeroconf = Zeroconf()
+        
+        # Get actual local network IP address
+        local_ip = get_local_ip()
+        
+        # Register the service
+        service_info = ServiceInfo(
+            "_http._tcp.local.",
+            "robot._http._tcp.local.",
+            addresses=[socket.inet_aton(local_ip)],
+            port=5000,
+            properties={
+                'description': 'Robot Control System'
+            },
+            server="robot.local."
+        )
+        
+        zeroconf.register_service(service_info)
+        print(f"✅ mDNS service registered: robot.local -> {local_ip}:5000")
+        
+    except Exception as e:
+        import traceback
+        print(f"⚠️  mDNS registration failed: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+
+def cleanup_mdns():
+    global zeroconf
+    if zeroconf:
+        try:
+            zeroconf.close()
+            print("✅ mDNS service unregistered")
+        except Exception as e:
+            print(f"⚠️  Error closing mDNS: {e}")
 
 def send_serial_data():
     global serial_port, object_data, control_mode, last_key_pressed, pid_params
@@ -580,6 +635,7 @@ if __name__ == '__main__':
     if os.environ.get('WERKZEUG_RUN_MAIN') or not app.debug:
         load_config()
         initialize_serial()
+        register_mdns_service()
         print("🚀 Starting Object Tracking Control System with Web Calibration...")
         print(f"🎨 HSV Detection Values: H({hsv_values['h_min']}-{hsv_values['h_max']}) S({hsv_values['s_min']}-{hsv_values['s_max']}) V({hsv_values['v_min']}-{hsv_values['v_max']})")
         print(f"🔧 Morphology: erosion={morphology_values['erosion']}, dilation={morphology_values['dilation']}, opening={morphology_values['opening']}, closing={morphology_values['closing']}")
@@ -593,4 +649,9 @@ if __name__ == '__main__':
             print("⚠️  Warning: Camera initialization failed, will retry when needed.")
     
     print("🌐 Flask server starting on http://0.0.0.0:5000")
-    app.run(debug=False, host='0.0.0.0', port=5000, threaded=True)
+    print("🌐 Access via: http://robot.local:5000")
+    
+    try:
+        app.run(debug=False, host='0.0.0.0', port=5000, threaded=True)
+    finally:
+        cleanup_mdns()
